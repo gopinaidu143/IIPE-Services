@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import UserAccount, MasterData, Student, Faculty, Admin,Role
+from .models import UserAccount, MasterData, Student, Faculty, Admin,Role,Service
 from django.contrib.auth import authenticate
 from django.db import models
 
@@ -70,6 +70,14 @@ class LoginSerializer(serializers.Serializer):
         
         data['user'] = user
         return data
+
+
+class ServiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Service
+        fields = ['service_name', 'description']
+
+
 
 
 # class RoleSpecificSerializer(serializers.Serializer):

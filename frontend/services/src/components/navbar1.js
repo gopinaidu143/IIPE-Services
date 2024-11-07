@@ -1,8 +1,5 @@
-// //navbar1.js
-
 // import React, { useState, useEffect } from "react";
 // import logo from "../assets/logo.jpg";
-
 // import axios from "axios";
 
 // const Navbar1 = () => {
@@ -10,6 +7,7 @@
 //   const [activeDropdown, setActiveDropdown] = useState(null);
 //   const [hoveredItem, setHoveredItem] = useState(null);
 //   const [isMobile, setIsMobile] = useState(false);
+//   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
 //   useEffect(() => {
 //     const handleResize = () => {
@@ -21,34 +19,40 @@
 //     return () => window.removeEventListener("resize", handleResize);
 //   }, []);
 
+//   useEffect(() => {
+//     // Check if tokens exist in session storage to set authentication status
+//     const accessToken = sessionStorage.getItem("access_token");
+//     const refreshToken = localStorage.getItem("refresh_token");
+//     setIsAuthenticated(!!accessToken && !!refreshToken);
+//   }, []);
 
+//   const logout = async () => {
+//     const refreshToken = sessionStorage.getItem("refresh_token");
 
-// const logout = async () => {
-//   const refreshToken = sessionStorage.getItem("refresh_token");
+//     try {
+//       const response = await axios.post(
+//         "/api/logout/",
+//         { refresh: refreshToken },
+//         {
+//           headers: {
+//             "Content-Type": "application/json",
+//             Authorization: `Bearer ${sessionStorage.getItem("access_token")}`,
+//           },
+//         }
+//       );
 
-//   try {
-   
-//     const response = await axios.post(
-//       "/api/logout/",  
-//       { refresh: refreshToken },
-//       {
-//         headers: {
-//           "Content-Type": "application/json",
-//           Authorization: `Bearer ${sessionStorage.getItem("access_token")}`,
-//         },
+//       if (response.status === 205) {
+//         sessionStorage.clear();
+//         localStorage.clear();
+//         setIsAuthenticated(false); // Update authentication status
+//         alert("Logout successfully.");
+//         window.location.href = "/";
 //       }
-//     );
-
-//     if (response.status === 205) {
-//       sessionStorage.clear();
-//       alert("Logout successful.");
-//       window.location.href = "/"; 
+//     } catch (error) {
+//       console.error("Logout error:", error);
+//       alert("Something went wrong. Please try again.");
 //     }
-//   } catch (error) {
-//     console.error("Logout error:", error);
-//     alert("Something went wrong. Please try again.");
-//   }
-// };
+//   };
 
 
 
@@ -155,6 +159,7 @@
 //     },
 //   };
 
+
 //   const navLinks = [
 //     { name: "Home", path: "/" },
 //     { name: "About IIPE", path: "/about" },
@@ -185,14 +190,15 @@
 //     },
 //     {
 //       name: "User",
-//       dropdownItems: [
-//         { name: "Student", path: "/login?role=Student" },
-//         { name: "Employee", path: "/login?role=Employee" },
-//         { name: "Faculty", path: "/login?role=Faculty" },
-//         { name: "ExEmployee", path: "/login?role=ExEmployee" },
-//         { name: "Alumni", path: "/login?role=Alumni" },
-//         { name: "Logout", path: "/" },
-//       ],
+//       dropdownItems: isAuthenticated
+//         ? [{ name: "Logout", path: "/", onClick: () => logout()  }]
+//         : [
+//             { name: "Student", path: "/login?role=Student" },
+//             { name: "Employee", path: "/login?role=Employee" },
+//             { name: "Faculty", path: "/login?role=Faculty" },
+//             { name: "ExEmployee", path: "/login?role=ExEmployee" },
+//             { name: "Alumni", path: "/login?role=Alumni" },
+//           ],
 //     },
 //   ];
 
@@ -217,42 +223,31 @@
 //                 <a
 //                   href={link.path}
 //                   style={styles.menuItem}
-//                   onMouseEnter={(e) => {
-//                     e.target.style.backgroundColor = "rgba(255,255,255,0.1)";
-//                   }}
-//                   onMouseLeave={(e) => {
-//                     e.target.style.backgroundColor = "transparent";
-//                   }}
+//                   onClick={link.onClick}
 //                 >
 //                   {link.name}
 //                 </a>
 //               ) : (
-//                 <div
-//                   style={styles.menuItem}
-//                   onMouseEnter={(e) => {
-//                     e.target.style.backgroundColor = "rgba(255,255,255,0.1)";
-//                   }}
-//                   onMouseLeave={(e) => {
-//                     e.target.style.backgroundColor = "transparent";
-//                   }}
-//                 >
+//                 <div style={styles.menuItem}>
 //                   {link.name}
 //                 </div>
 //               )}
 //               {link.dropdownItems && (
 //                 <div style={styles.dropdown(hoveredItem === link.name)}>
 //                   {link.dropdownItems.map((item) => (
-//                     <a
+//                     item.onClick ? (
+//                       <button
+//                         key={index}
+//                         onClick={item.onClick}
+//                         style={styles.dropdownItem}
+//                       >
+//                         {item.name}
+//                       </button>
+//                     ) :<a
 //                       key={item.name}
 //                       href={item.path}
 //                       style={styles.dropdownItem}
-//                       onMouseEnter={(e) => {
-//                         e.target.style.backgroundColor =
-//                           "rgba(255,255,255,0.1)";
-//                       }}
-//                       onMouseLeave={(e) => {
-//                         e.target.style.backgroundColor = "transparent";
-//                       }}
+//                       onClick={item.onClick}
 //                     >
 //                       {item.name}
 //                     </a>
@@ -265,29 +260,7 @@
 
 //         {/* Hamburger Menu */}
 //         <button onClick={() => setIsOpen(!isOpen)} style={styles.hamburger}>
-//           <svg
-//             width="24"
-//             height="24"
-//             viewBox="0 0 24 24"
-//             fill="none"
-//             stroke="currentColor"
-//             strokeWidth="2"
-//             strokeLinecap="round"
-//             strokeLinejoin="round"
-//           >
-//             {isOpen ? (
-//               <>
-//                 <line x1="18" y1="6" x2="6" y2="18" />
-//                 <line x1="6" y1="6" x2="18" y2="18" />
-//               </>
-//             ) : (
-//               <>
-//                 <line x1="3" y1="12" x2="21" y2="12" />
-//                 <line x1="3" y1="6" x2="21" y2="6" />
-//                 <line x1="3" y1="18" x2="21" y2="18" />
-//               </>
-//             )}
-//           </svg>
+//           <svg /* SVG icon code */ />
 //         </button>
 
 //         {/* Mobile Menu */}
@@ -295,30 +268,27 @@
 //           {navLinks.map((link) => (
 //             <div key={link.name}>
 //               {link.path ? (
-//                 <a href={link.path} style={styles.mobileMenuItem}>
+//                 <a href={link.path} style={styles.mobileMenuItem} onClick={link.onClick}>
 //                   {link.name}
 //                 </a>
 //               ) : (
 //                 <div
 //                   style={styles.mobileMenuItem}
 //                   onClick={() =>
-//                     setActiveDropdown(
-//                       activeDropdown === link.name ? null : link.name
-//                     )
+//                     setActiveDropdown(activeDropdown === link.name ? null : link.name)
 //                   }
 //                 >
 //                   {link.name}
 //                 </div>
 //               )}
 //               {link.dropdownItems && activeDropdown === link.name && (
-//                 <div
-//                   style={{ ...styles.dropdown(true), ...styles.dropdownMobile }}
-//                 >
+//                 <div style={{ ...styles.dropdown(true), ...styles.dropdownMobile }}>
 //                   {link.dropdownItems.map((item) => (
 //                     <a
 //                       key={item.name}
 //                       href={item.path}
 //                       style={styles.dropdownItem}
+//                       onClick={item.onClick}
 //                     >
 //                       {item.name}
 //                     </a>
@@ -333,7 +303,8 @@
 //   );
 // };
 
-// export default Navbar1;
+// export default Navbar1;
+
 
 import React, { useState, useEffect } from "react";
 import logo from "../assets/logo.jpg";
@@ -345,6 +316,7 @@ const Navbar1 = () => {
   const [hoveredItem, setHoveredItem] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [resources, setResources] = useState([]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -357,19 +329,49 @@ const Navbar1 = () => {
   }, []);
 
   useEffect(() => {
-    // Check if tokens exist in session storage to set authentication status
     const accessToken = sessionStorage.getItem("access_token");
     const refreshToken = localStorage.getItem("refresh_token");
     setIsAuthenticated(!!accessToken && !!refreshToken);
   }, []);
 
-  const logout = async () => {
-    const refreshToken = sessionStorage.getItem("refresh_token");
 
+  
+  useEffect(() => {
+    const fetchServices = async () => {
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+      const userRole = storedUser ? storedUser.role : null;
+
+      // Only fetch if user is authenticated and role is available
+      if (isAuthenticated && userRole) {
+        const apiUrl = `/api/services/?role=${userRole}`;
+        try {
+          const response = await axios.get(apiUrl);
+          setResources(response.data); // Set resources here
+          console.log("Fetched services:", response.data);
+        } catch (error) {
+          console.error("Error fetching services:", error);
+        }
+      }
+      else{
+        const apiUrl = "/api/services";
+        try {
+          const response = await axios.get(apiUrl);
+          setResources(response.data); // Set resources here
+          console.log("Fetched services:", response.data);
+        } catch (error) {
+          console.error("Error fetching services:", error);
+        }
+      }
+    };
+
+    fetchServices();
+  }, [isAuthenticated]);
+
+  const logout = async () => {
     try {
       const response = await axios.post(
         "/api/logout/",
-        { refresh: refreshToken },
+        { refresh: sessionStorage.getItem("refresh_token") },
         {
           headers: {
             "Content-Type": "application/json",
@@ -377,11 +379,12 @@ const Navbar1 = () => {
           },
         }
       );
-
+  
       if (response.status === 205) {
         sessionStorage.clear();
         localStorage.clear();
-        setIsAuthenticated(false); // Update authentication status
+        setIsAuthenticated(false);
+        setResources([]); // Clear resources on logout
         alert("Logout successfully.");
         window.location.href = "/";
       }
@@ -390,10 +393,9 @@ const Navbar1 = () => {
       alert("Something went wrong. Please try again.");
     }
   };
+  
 
-
-
-  const styles = {
+    const styles = {
     navbar: {
       backgroundColor: "#f47c21",
       width: "100%",
@@ -496,7 +498,6 @@ const Navbar1 = () => {
     },
   };
 
-
   const navLinks = [
     { name: "Home", path: "/" },
     { name: "About IIPE", path: "/about" },
@@ -518,17 +519,16 @@ const Navbar1 = () => {
     { name: "Placements", path: "/placements" },
     {
       name: "Resources",
-      dropdownItems: [
-        { name: "Library", path: "/resources/library" },
-        { name: "Labs", path: "/resources/labs" },
-        { name: "GuestHouse booking", path: "/GuestHousebooking" },
-        { name: "OPD", path: "/OPD" },
-      ],
+      dropdownItems: resources.map((resource) => ({
+        name: resource.service_name,
+        
+        path: '/',
+      })),
     },
     {
       name: "User",
       dropdownItems: isAuthenticated
-        ? [{ name: "Logout", path: "/", onClick: () => logout()  }]
+        ? [{ name: "Logout", path: "/", onClick: () => logout() }]
         : [
             { name: "Student", path: "/login?role=Student" },
             { name: "Employee", path: "/login?role=Employee" },
@@ -580,14 +580,14 @@ const Navbar1 = () => {
                       >
                         {item.name}
                       </button>
-                    ) :<a
-                      key={item.name}
-                      href={item.path}
-                      style={styles.dropdownItem}
-                      onClick={item.onClick}
-                    >
-                      {item.name}
-                    </a>
+                    ) : <a
+                        key={item.name}
+                        href={item.path}
+                        style={styles.dropdownItem}
+                        onClick={item.onClick}
+                      >
+                        {item.name}
+                      </a>
                   ))}
                 </div>
               )}
@@ -641,5 +641,3 @@ const Navbar1 = () => {
 };
 
 export default Navbar1;
-
-

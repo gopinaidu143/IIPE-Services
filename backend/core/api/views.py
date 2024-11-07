@@ -5,13 +5,14 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
-from .models import MasterData, Degree, Student, Faculty,Role,Employee,Alumni,ExEmployee,Department,Designation,UserAccount
-from .serializers import UserRegistrationSerializer,LoginSerializer
+from .models import MasterData, Degree, Student, Faculty,Role,Employee,Alumni,ExEmployee,Department,Designation,UserAccount,Service,RoleServiceAssignment
+from .serializers import UserRegistrationSerializer,LoginSerializer,ServiceSerializer
 import pyotp
 from .send_mails import send_otp_email
 from django.utils import timezone
 from datetime import datetime, timedelta
 from dateutil import parser
+from .utils import change_date
 
 
 
@@ -21,8 +22,22 @@ class RegisterAPIView(APIView):
         try:
             user_data = request.data
             role_name = user_data.get('role')
+            user_dob = change_date(user_data.get('dob'))
+            
         
-            if not MasterData.objects.filter(email=user_data['email'], role__role_name=role_name).exists():
+            if role_name=="Student" and not MasterData.objects.filter(email=user_data['email'], role__role_name=role_name,dob=user_dob,user_id=user_data.get('student_id')).exists():
+                return Response({'error': 'User not found in master data'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if role_name=="Faculty" and not MasterData.objects.filter(email=user_data['email'], role__role_name=role_name,dob=user_dob,user_id=user_data.get('faculty_id'),date_of_joining=change_date(user_data.get('joined_date'))).exists():
+                return Response({'error': 'User not found in master data'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if role_name=="Employee" and not MasterData.objects.filter(email=user_data['email'], role__role_name=role_name,dob=user_dob,user_id=user_data.get('employee_id'),date_of_joining=change_date(user_data.get('joined_date'))).exists():
+                return Response({'error': 'User not found in master data'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if role_name=="Alumni" and not MasterData.objects.filter(email=user_data['email'], role__role_name=role_name,dob=user_dob,user_id=user_data.get('alumni_id')).exists():
+                return Response({'error': 'User not found in master data'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if role_name=="ExEmployee" and not MasterData.objects.filter(email=user_data['email'], role__role_name=role_name,dob=user_dob,user_id=user_data.get('employee_id'),date_of_retirement=change_date(user_data.get('retirement_date'))).exists():
                 return Response({'error': 'User not found in master data'}, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:                    
@@ -68,10 +83,10 @@ class RegisterAPIView(APIView):
                         father_name=user_data.get('father_name'),
                         mother_name=user_data.get('mother_name'),
                         aadhar_number=user_data.get('aadhar_number'),
-                        dob= parser.parse(user_data.get('dob')).date(),
+                        dob= change_date(user_data.get('dob')),
                         degree= degree,
-                        date_of_joining=parser.parse(user_data.get('date_of_joining')).date(),
-                        expected_date_of_completion=parser.parse(user_data.get('expected_date_of_completion')).date(),
+                        date_of_joining=change_date(user_data.get('date_of_joining')),
+                        expected_date_of_completion=change_date(user_data.get('expected_date_of_completion')),
                         photo=photo_binary,
                         id_proof=id_proof_binary,
                     )
@@ -93,13 +108,13 @@ class RegisterAPIView(APIView):
                         user = user,
                         faculty_id = user_data.get('faculty_id'),
                         department = department,
-                        joined_date = parser.parse(user_data.get('joined_date')).date(),
+                        joined_date = change_date(user_data.get('joined_date')),
                         gender = user_data.get('gender')[0],
                         contact_no = user_data.get('contact_no'),
                         address = user_data.get('address'),
                         designation = designation,
                         aadhar = user_data.get('aadhar'),
-                        dob = parser.parse(user_data.get('dob')).date(),
+                        dob = change_date(user_data.get('dob')),
                         landline = user_data.get('landline')
                     )
                 except Exception as e:
@@ -118,13 +133,13 @@ class RegisterAPIView(APIView):
                         user = user,
                         employee_id = user_data.get('employee_id'),
                         department = department,
-                        joined_date = parser.parse(user_data.get('joined_date')).date(),
+                        joined_date = change_date(user_data.get('joined_date')),
                         gender = user_data.get('gender')[0],
                         contact_no = user_data.get('contact_no'),
                         address = user_data.get('address'),
                         designation = designation,
                         aadhar = user_data.get('aadhar'),
-                        dob = parser.parse(user_data.get('dob')).date(),
+                        dob = change_date(user_data.get('dob')),
                         landline = user_data.get('landline')
                     )
                 except Exception as e:
@@ -149,14 +164,14 @@ class RegisterAPIView(APIView):
                         user = user,
                         alumni_id = user_data.get('alumni_id'),
                         department = department,
-                        graduation_date = parser.parse(user_data.get('graduation_date')).date(),
+                        graduation_date = change_date(user_data.get('graduation_date')),
                         gender = user_data.get('gender')[0],
                         address = user_data.get('address'),
                         contact_no = user_data.get('contact_no'),
                         father_name = user_data.get('father_name'),
                         mother_name = user_data.get('mother_name'),
                         aadhar_number = user_data.get('aadhar_number'),
-                        dob = parser.parse(user_data.get('dob')).date(),
+                        dob = change_date(user_data.get('dob')),
                         degree = degree,
                         photo = photo_binary,
                         id_proof = id_proof_binary
@@ -179,13 +194,13 @@ class RegisterAPIView(APIView):
                         user = user,
                         employee_id = user_data.get('employee_id'),
                         department = department,
-                        retirement_date = parser.parse(user_data.get('retirement_date')).date(),
+                        retirement_date = change_date(user_data.get('retirement_date')),
                         gender = user_data.get('gender')[0],
                         contact_no = user_data.get('contact_no'),
                         address = user_data.get('address'),
                         designation = designation,
                         aadhar = user_data.get('aadhar'),
-                        dob = parser.parse(user_data.get('dob')).date(),
+                        dob = change_date(user_data.get('dob')),
 
                         id_proof = id_proof_binary
                     )
@@ -339,3 +354,22 @@ class FormOptionsView(APIView):
             return Response(response_data)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+class ServiceListView(APIView):
+    
+    def get(self, request, *args, **kwargs):
+        role_name = request.query_params.get('role')
+        
+        if role_name:
+            try:
+                role = Role.objects.get(role_name=role_name)
+                services = Service.objects.filter(service_roles__role=role)
+            except Role.DoesNotExist:
+                return Response({"error": "Role not found."}, status=404)
+        else:
+            services = Service.objects.all()
+        
+        serializer = ServiceSerializer(services, many=True)
+        return Response(serializer.data)

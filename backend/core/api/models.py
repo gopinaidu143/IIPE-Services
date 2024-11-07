@@ -53,6 +53,8 @@ class MasterData(models.Model):
     user_id = models.CharField(max_length=100, unique=True)
     username = models.CharField(max_length=100)
     dob = models.DateField()
+    date_of_joining = models.DateField(null=True,blank=True)
+    date_of_retirement = models.DateField(null=True,blank=True)
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
     no_dependents = models.PositiveIntegerField(validators=[MaxValueValidator(7)])
 

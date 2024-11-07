@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef} from 'react';
 import Navbar from '../components/navbar1';
 import axios from 'axios';
 import { redirect } from 'react-router-dom';
@@ -66,36 +66,12 @@ const SelectField = ({ label, name, value, onChange, options, error }) => (
 
 const RegistrationForm = () => {
   const [role, setRole] = useState('');
-  const [formData, setFormData] = useState({
-    email: '',
-    firstName: '',
-    lastName: '',
-    gender: '',
-    mobile: '',
-    password: '',
-    rePassword: '',
-    employeeCode: '',
-    department: '',
-    designation: '',
-    fatherName: '',
-    motherName: '',
-    aadhar: '',
-    course: '',
-    enrollment: '',
-    dateOfJoining: '',
-    dateOfCompletion: '',
-    dateOfBirth: '',
-    dateOfRetirement: '',
-    Landline:'',
-    address: '',
-    photoOfStudent: null,
-    photoOfIdCard: null,
-    proofOfId: null,
-  });
-
+  const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [photoOfStudentPreview, setPhotoOfStudentPreview] = useState(null);
   const [photoOfIdCardPreview, setPhotoOfIdCardPreview] = useState(null);
+  const photoOfStudentInputRef = useRef(null); // Create a ref for the student photo input
+  const photoOfIdCardInputRef = useRef(null); // Create a ref for the ID card input
   const [departments, setDepartments] = useState([]);
   const [designations, setDesignations] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -116,7 +92,11 @@ const RegistrationForm = () => {
 
     fetchOptions();
   }, []);
-
+  const handleRoleChange = (newRole) => {
+    setRole(newRole);
+    setFormData(initialFormData); // Reset form data when role changes
+    resetPhotoFields();
+  };
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
     if (type === 'file') {
@@ -125,13 +105,28 @@ const RegistrationForm = () => {
       setFormData({ ...formData, [name]: value });
     }
   };
+  const resetPhotoFields = () => {
+    setFormData((prevData) => ({
+      ...prevData,
+      photoOfStudent: null,
+      photoOfIdCard: null,
+    }));
+    setPhotoOfStudentPreview(null); // Reset photo preview
+    setPhotoOfIdCardPreview(null); // Reset ID card preview
 
+    if (photoOfStudentInputRef.current) {
+      photoOfStudentInputRef.current.value = null; // Clear the file input
+    }
+    if (photoOfIdCardInputRef.current) {
+      photoOfIdCardInputRef.current.value = null; // Clear the file input
+    }
+  };
   const handlePhotoChange = (e) => {
     const { name, files } = e.target;
     const file = files[0];
 
     if (file) {
-      const validImageTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+      const validImageTypes = ['image/jpeg', 'image/png', 'image/jpg','application/pdf'];
       if (!validImageTypes.includes(file.type) || file.size > 400 * 1024) {
         alert("Please upload a valid image (JPG/PNG) not exceeding 400 KB.");
         e.target.value = "";  // Reset the field
@@ -222,7 +217,7 @@ const RegistrationForm = () => {
       // Append necessary fields to the FormData object
     formDataToSend.append('email', formData.email);
     formDataToSend.append('role', role);
-    formDataToSend.append('username', `${formData.firstName} ${formData.lastName}`);
+    formDataToSend.append('username',` ${formData.firstName} ${formData.lastName}`);
     formDataToSend.append('first_name', formData.firstName);
     formDataToSend.append('last_name', formData.lastName);
     formDataToSend.append('password',formData.password);
@@ -322,25 +317,13 @@ const RegistrationForm = () => {
         }
       } 
       else {
-        alert("An error occurred during registration.");
-        setFormData((prevData) => ({
-          ...prevData,
-          photoOfStudent: null,
-          photoOfIdCard: null,
-        }));
-        setPhotoOfStudentPreview(null); // Reset photo preview
-        setPhotoOfIdCardPreview(null); // Reset ID card preview
+        alert("Registration failed due to mismatch of data.");
+        resetPhotoFields();
       }
     } catch (error) {
       console.error("Error submitting registration form", error);
       alert("Registration failed. Please try again.");
-      setFormData((prevData) => ({
-        ...prevData,
-        photoOfStudent: null,
-        photoOfIdCard: null,
-      }));
-      setPhotoOfStudentPreview(null); // Reset photo preview
-      setPhotoOfIdCardPreview(null); // Reset ID card preview
+      resetPhotoFields();
     }
   }
   };
@@ -356,7 +339,8 @@ const RegistrationForm = () => {
                   label="Register as"
                   name="role"
                   value={role}
-                  onChange={(e) => setRole(e.target.value)}
+                  onChange={(e) => handleRoleChange(e.target.value)} // Use the new role change handler
+                  // onChange={(e) => setRole(e.target.value)}
                   options={roles}
                 />
                 <InputField label="Email" type="email" name="email" value={formData.email} onChange={handleChange} error={errors.email} />
@@ -376,7 +360,7 @@ const RegistrationForm = () => {
                 <InputField label="Address" type="text" name="address" value={formData.address} onChange={handleChange} error={errors.address} />
                 {role === 'Employee' || role === 'Faculty' ? (
                   <>
-<InputField label="Date of Joining" type="date" name="dateOfJoining" value={formData.dateOfJoining} onChange={handleChange} error={errors.dateOfJoining} />                  <InputField label="Employee Code" type="text" name="employeeCode" value={formData.employeeCode} onChange={handleChange} error={errors.employeeCode} />
+                  <InputField label="Date of Joining" type="date" name="dateOfJoining" value={formData.dateOfJoining} onChange={handleChange} error={errors.dateOfJoining} />                  <InputField label="Employee Code" type="text" name="employeeCode" value={formData.employeeCode} onChange={handleChange} error={errors.employeeCode} />
                   <InputField label="Landline No" type="tel" name="Landline" value={formData.Landline} onChange={handleChange} error={errors.Landline} />
                     <SelectField label="Designation" name="designation" value={formData.designation} onChange={handleChange} options={designations} error={errors.designation} />
                   </>
@@ -390,7 +374,7 @@ const RegistrationForm = () => {
                     <InputField label="Expected date of Completion" type="date" name="dateOfCompletion" value={formData.dateOfCompletion} onChange={handleChange} error={errors.dateOfCompletion} />
                     <div>
                       <label>Proof of Student:</label>
-                      <input type="file" name="photoOfStudent" onChange={handleChange} accept="image/*" style={{ width: '100%', height: '30px', padding: '5px', border: '1px solid #ccc', borderRadius: '5px' }} />
+                      <input type="file" name="photoOfStudent" onChange={handleChange} accept="image/*" style={{ width: '100%', height: '30px', padding: '5px', border: '1px solid #ccc', borderRadius: '5px' }} ref={photoOfStudentInputRef}/>
                       {errors.photoOfStudent && <span style={{ color: 'red' }}>{errors.photoOfStudent}</span>}
                       {photoOfStudentPreview && (
                         <img src={photoOfStudentPreview} alt="Student Photo" style={{ width: '150px', height: '150px', objectFit: 'cover', borderRadius: '5px', marginTop: '10px' }} />
@@ -398,7 +382,7 @@ const RegistrationForm = () => {
                     </div>
                     <div>
                       <label>Proof of ID Card:</label>
-                      <input type="file" name="photoOfIdCard" onChange={handleChange} accept="image/*" style={{ width: '100%', height: '30px', padding: '5px', border: '1px solid #ccc', borderRadius: '5px' }} />
+                      <input type="file" name="photoOfIdCard" onChange={handleChange} accept="image/*" style={{ width: '100%', height: '30px', padding: '5px', border: '1px solid #ccc', borderRadius: '5px' }} ref={photoOfIdCardInputRef}/>
                       {errors.photoOfIdCard && <span style={{ color: 'red' }}>{errors.photoOfIdCard}</span>}
                       {photoOfIdCardPreview && (
                         <img src={photoOfIdCardPreview} alt="ID Card Photo" style={{ width: '150px', height: '150px', objectFit: 'cover', borderRadius: '5px', marginTop: '10px' }} />
@@ -413,16 +397,16 @@ const RegistrationForm = () => {
                   <InputField label="Graduation date" type="date" name="passingOutdate" value={formData.passingOutdate} onChange={handleChange} error={errors.passingOutdate} />
                   <InputField label="AlumniID" type="text" name="AlumniID" value={formData.AlumniID} onChange={handleChange} error={errors.AlumniID} />
                   <div>
-                    <label>Photo of Student:</label>
-                    <input type="file" name="photoOfStudent" onChange={handleChange}accept="image/*"style={{ width: '100%', height: '30px', padding: '5px', border: '1px solid #ccc', borderRadius: '5px' }}/>
+                    <label>Proof of Student:</label>
+                    <input type="file" name="photoOfStudent" onChange={handleChange}accept="image/*"style={{ width: '100%', height: '30px', padding: '5px', border: '1px solid #ccc', borderRadius: '5px' }} ref={photoOfStudentInputRef}/>
                     {errors.photoOfStudent && <span style={{ color: 'red' }}>{errors.photoOfStudent}</span>}
                     {photoOfStudentPreview && (
                       <img src={photoOfStudentPreview} alt="Student Photo" style={{ width: '150px', height: '150px', objectFit: 'cover', borderRadius: '5px', marginTop: '10px', }} />
                     )}
                   </div>
                   <div>
-                    <label>Photo of ID/Aadhar Card :</label>
-                    <input type="file" name="photoOfIdCard" onChange={handleChange} accept="image/*" style={{ width: '100%', height: '30px', padding: '5px', border: '1px solid #ccc', borderRadius: '5px' }} />
+                    <label>Proof of ID/Aadhar Card :</label>
+                    <input type="file" name="photoOfIdCard" onChange={handleChange} accept="image/*" style={{ width: '100%', height: '30px', padding: '5px', border: '1px solid #ccc', borderRadius: '5px' }} ref={photoOfIdCardInputRef} />
                     {errors.photoOfIdCard && <span style={{ color: 'red' }}>{errors.photoOfIdCard}</span>}
                     {photoOfIdCardPreview && (
                       <img src={photoOfIdCardPreview} alt="ID Card Photo" style={{ width: '150px', height: '150px', objectFit: 'cover', borderRadius: '5px', marginTop: '10px', }} /> 
@@ -435,8 +419,8 @@ const RegistrationForm = () => {
                     <InputField label="Employee Code" type="text" name="employeeCode" value={formData.employeeCode} onChange={handleChange} error={errors.employeeCode}  />
                   <InputField label="Date of retirement" type="date" name="dateofretirement" value={formData.dateofretirement} onChange={handleChange} error={errors.dateofretirement}  />
                   <div>
-                    <label>Photo of ID Card:</label>
-                    <input type="file" name="photoOfIdCard" onChange={handleChange} accept="image/*" style={{ width: '100%', height: '30px', padding: '5px', border: '1px solid #ccc', borderRadius: '5px' }} />
+                    <label>Proof of ID Card:</label>
+                    <input type="file" name="photoOfIdCard" onChange={handleChange} accept="image/*" style={{ width: '100%', height: '30px', padding: '5px', border: '1px solid #ccc', borderRadius: '5px' }} ref={photoOfIdCardInputRef}/>
                     {errors.photoOfIdCard && <span style={{ color: 'red' }}>{errors.photoOfIdCard}</span>}
                     {photoOfIdCardPreview && (
                       <img src={photoOfIdCardPreview} alt="ID Card Photo" style={{  width: '150px', height: '150px', objectFit: 'cover', borderRadius: '5px', marginTop: '10px', }} />
@@ -461,5 +445,3 @@ const RegistrationForm = () => {
 };
 
 export default RegistrationForm;
-
-
