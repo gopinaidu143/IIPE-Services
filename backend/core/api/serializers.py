@@ -1,7 +1,9 @@
 from rest_framework import serializers
-from .models import UserAccount, MasterData, Student, Faculty, Admin,Role,Service
+from .models import UserAccount, MasterData, Student, Faculty, Admin,Role,Service,Dependents,Hospital
 from django.contrib.auth import authenticate
 from django.db import models
+import base64
+
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     role = serializers.CharField()
@@ -33,15 +35,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
         return user
     
-class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
-    role = serializers.CharField()
-
-    def validate(self, data):
-        from django.contrib.auth import authenticate
-from rest_framework import serializers
-from api.models import UserAccount  # Assuming UserAccount is your user model
+ # Assuming UserAccount is your user model
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -77,6 +71,30 @@ class ServiceSerializer(serializers.ModelSerializer):
         model = Service
         fields = ['service_name', 'description']
 
+
+
+class MasterDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MasterData
+        fields = ['username', 'contact_no', 'user_id']  # Customize fields as needed
+
+class DependentSerializer(serializers.ModelSerializer):
+    id_proof_base64 = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Dependents
+        fields = ['dependent_id', 'dependent_name', 'dob', 'gender', 'relation', 'id_proof_base64']
+
+    def get_id_proof_base64(self, obj):
+        if obj.id_proof:
+            # Convert binary image data to Base64 string
+            return base64.b64encode(obj.id_proof).decode('utf-8')
+        return None
+
+class HospitalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hospital
+        fields = ['hospital_name', 'contact_details', 'remarks']
 
 
 

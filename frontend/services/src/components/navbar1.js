@@ -1,3 +1,5 @@
+
+
 // import React, { useState, useEffect } from "react";
 // import logo from "../assets/logo.jpg";
 // import axios from "axios";
@@ -8,6 +10,7 @@
 //   const [hoveredItem, setHoveredItem] = useState(null);
 //   const [isMobile, setIsMobile] = useState(false);
 //   const [isAuthenticated, setIsAuthenticated] = useState(false);
+//   const [resources, setResources] = useState([]);
 
 //   useEffect(() => {
 //     const handleResize = () => {
@@ -20,19 +23,49 @@
 //   }, []);
 
 //   useEffect(() => {
-//     // Check if tokens exist in session storage to set authentication status
 //     const accessToken = sessionStorage.getItem("access_token");
 //     const refreshToken = localStorage.getItem("refresh_token");
 //     setIsAuthenticated(!!accessToken && !!refreshToken);
 //   }, []);
 
-//   const logout = async () => {
-//     const refreshToken = sessionStorage.getItem("refresh_token");
 
+  
+//   useEffect(() => {
+//     const fetchServices = async () => {
+//       const userRole = JSON.parse(localStorage.getItem("user"));
+//       // const userRole = storedUser ? storedUser.role : null;
+
+//       // Only fetch if user is authenticated and role is available
+//       if (isAuthenticated && userRole) {
+//         const apiUrl = `/api/services/?role=${userRole}`;
+//         try {
+//           const response = await axios.get(apiUrl);
+//           setResources(response.data); // Set resources here
+//           console.log("Fetched services:", response.data);
+//         } catch (error) {
+//           console.error("Error fetching services:", error);
+//         }
+//       }
+//       else{
+//         const apiUrl = "/api/services";
+//         try {
+//           const response = await axios.get(apiUrl);
+//           setResources(response.data); // Set resources here
+//           console.log("Fetched services:", response.data);
+//         } catch (error) {
+//           console.error("Error fetching services:", error);
+//         }
+//       }
+//     };
+
+//     fetchServices();
+//   }, [isAuthenticated]);
+
+//   const logout = async () => {
 //     try {
 //       const response = await axios.post(
 //         "/api/logout/",
-//         { refresh: refreshToken },
+//         { refresh: sessionStorage.getItem("refresh_token") },
 //         {
 //           headers: {
 //             "Content-Type": "application/json",
@@ -40,11 +73,12 @@
 //           },
 //         }
 //       );
-
+  
 //       if (response.status === 205) {
 //         sessionStorage.clear();
 //         localStorage.clear();
-//         setIsAuthenticated(false); // Update authentication status
+//         setIsAuthenticated(false);
+//         setResources([]); // Clear resources on logout
 //         alert("Logout successfully.");
 //         window.location.href = "/";
 //       }
@@ -53,10 +87,9 @@
 //       alert("Something went wrong. Please try again.");
 //     }
 //   };
+  
 
-
-
-//   const styles = {
+//     const styles = {
 //     navbar: {
 //       backgroundColor: "#f47c21",
 //       width: "100%",
@@ -159,7 +192,6 @@
 //     },
 //   };
 
-
 //   const navLinks = [
 //     { name: "Home", path: "/" },
 //     { name: "About IIPE", path: "/about" },
@@ -181,17 +213,16 @@
 //     { name: "Placements", path: "/placements" },
 //     {
 //       name: "Resources",
-//       dropdownItems: [
-//         { name: "Library", path: "/resources/library" },
-//         { name: "Labs", path: "/resources/labs" },
-//         { name: "GuestHouse booking", path: "/GuestHousebooking" },
-//         { name: "OPD", path: "/OPD" },
-//       ],
+//       dropdownItems: resources.map((resource) => ({
+//         name: resource.service_name,
+        
+//         path: '/',
+//       })),
 //     },
 //     {
 //       name: "User",
 //       dropdownItems: isAuthenticated
-//         ? [{ name: "Logout", path: "/", onClick: () => logout()  }]
+//         ? [{ name: "Logout", path: "/", onClick: () => logout() }]
 //         : [
 //             { name: "Student", path: "/login?role=Student" },
 //             { name: "Employee", path: "/login?role=Employee" },
@@ -243,14 +274,14 @@
 //                       >
 //                         {item.name}
 //                       </button>
-//                     ) :<a
-//                       key={item.name}
-//                       href={item.path}
-//                       style={styles.dropdownItem}
-//                       onClick={item.onClick}
-//                     >
-//                       {item.name}
-//                     </a>
+//                     ) : <a
+//                         key={item.name}
+//                         href={item.path}
+//                         style={styles.dropdownItem}
+//                         onClick={item.onClick}
+//                       >
+//                         {item.name}
+//                       </a>
 //                   ))}
 //                 </div>
 //               )}
@@ -303,20 +334,306 @@
 //   );
 // };
 
+// // export default Navbar1;
+// import React, { useState, useEffect } from "react";
+// import logo from "../assets/logo.jpg";
+// import  LogoutButton  from "../pages/logout";
+// import { useNavigate } from "react-router-dom";
+
+
+// const Navbar1 = () => {
+//   const [isOpen, setIsOpen] = useState(false);
+//   const [activeDropdown, setActiveDropdown] = useState(null);
+//   const [hoveredItem, setHoveredItem] = useState(null);
+//   const [isMobile, setIsMobile] = useState(false);
+//   const [isAuthenticated, setIsAuthenticated] = useState(false);
+//   const navigate = useNavigate();
+
+//   useEffect(() => {
+//     const handleResize = () => {
+//       setIsMobile(window.innerWidth < 1000);
+//     };
+
+//     handleResize();
+//     window.addEventListener("resize", handleResize);
+//     return () => window.removeEventListener("resize", handleResize);
+//   }, []);
+
+//   useEffect(() => {
+//     const accessToken = sessionStorage.getItem("access_token");
+//     const user = localStorage.getItem('user');
+//     setIsAuthenticated(!!accessToken && !!user );
+//   }, [sessionStorage.getItem("access_token")]);
+
+//   const handleLogout = async () => {
+//     setIsAuthenticated(false);
+//     <LogoutButton/>
+
+//   };
+
+//   const styles = {
+//     navbar: {
+//       backgroundColor: "#2c3e50",
+//       width: "100%",
+//       position: "fixed",
+//       top: 0,
+//       left: 0,
+//       zIndex: 1001,
+//       boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+//       transition: "all 0.3s ease",
+//     },
+//     container: {
+//       display: "flex",
+//       alignItems: "center",
+//       justifyContent: "space-between",
+//       padding: "10px 30px",
+//       position: "relative",
+//       maxWidth: "1200px",
+//       margin: "0 auto",
+//     },
+//     logoContainer: {
+//       display: "flex",
+//       alignItems: "center",
+//     },
+//     logo: {
+//       maxHeight: "80px",
+//       width: "100px",
+//       marginRight: "15px",
+//     },
+//     instituteName: {
+//       color: "white",
+//       fontWeight: "bold",
+//       fontFamily: "Arial, sans-serif",
+//       fontSize: isMobile ? "1.5rem" : "2rem",
+//       transition: "all 0.3s ease",
+//     },
+//     menuContainer: {
+//       display: isMobile ? "none" : "flex",
+//       alignItems: "center",
+//       marginLeft: "auto",
+//     },
+//     menuItem: {
+//       color: "white",
+//       fontSize: "1.1rem",
+//       marginLeft: "30px",
+//       textDecoration: "none",
+//       padding: "12px 18px",
+//       position: "relative",
+//       cursor: "pointer",
+//       borderRadius: "4px",
+//       transition: "background-color 0.3s ease",
+//     },
+//     menuItemHover: {
+//       backgroundColor: "#16a085",
+//     },
+//     hamburger: {
+//       display: isMobile ? "block" : "none",
+//       color: "white",
+//       cursor: "pointer",
+//       padding: "10px",
+//       border: "none",
+//       background: "none",
+//     },
+//     mobileMenu: {
+//       display: isOpen ? "block" : "none",
+//       position: "absolute",
+//       top: "100%",
+//       left: 0,
+//       right: 0,
+//       backgroundColor: "#34495e",
+//       padding: "10px 0",
+//       boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+//     },
+//     mobileMenuItem: {
+//       color: "white",
+//       padding: "12px 20px",
+//       display: "block",
+//       borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
+//       cursor: "pointer",
+//       transition: "background-color 0.3s ease",
+//     },
+//     dropdown: (isVisible) => ({
+//       position: "absolute",
+//       top: "100%",
+//       left: 0,
+//       backgroundColor: "#16a085",
+//       minWidth: "180px",
+//       boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
+//       display: isVisible ? "block" : "none",
+//       zIndex: 1001,
+//       borderRadius: "4px",
+//     }),
+//     dropdownItem: {
+//       color: "white",
+//       padding: "10px 15px",
+//       display: "block",
+//       textDecoration: "none",
+//       transition: "background-color 0.3s ease",
+//     },
+//     dropdownItemHover: {
+//       backgroundColor: "#1abc9c",
+//     },
+//     menuItemContainer: {
+//       position: "relative",
+//       display: "inline-block",
+//     },
+//   };
+
+//   const navLinks = [
+//     { name: "Home", path: "/" },
+//     { name: "About IIPE", path: "/about" },
+//     { name: "Academics", path: "/academics" },
+//     {
+//       name: "People",
+//       dropdownItems: [
+//         { name: "Faculty", path: "/people/faculty" },
+//         { name: "Staff", path: "/people/staff" },
+//       ],
+//     },
+//     {
+//       name: "Students",
+//       dropdownItems: [
+//         { name: "Undergrad", path: "/students/undergrad" },
+//         { name: "Postgrad", path: "/students/postgrad" },
+//       ],
+//     },
+//     { name: "Placements", path: "/placements" },
+//     { name: "Resources", path: "/services", onClick: () => checkLoginStatus() },
+//     {
+//       name: "User",
+//       dropdownItems: isAuthenticated
+//         ? [{ name: "Logout", path: "/", onClick: handleLogout }]
+//         : [
+//             { name: "Student", path: "/login?role=Student" },
+//             { name: "Employee", path: "/login?role=Employee" },
+//             { name: "Faculty", path: "/login?role=Faculty" },
+//             { name: "ExEmployee", path: "/login?role=ExEmployee" },
+//             { name: "Alumni", path: "/login?role=Alumni" },
+//           ],
+//     },
+//   ];
+
+//   const checkLoginStatus = () => {
+//     const role = sessionStorage.getItem("user").role;
+//     navigate(role ? "/services" : "/services");
+//   };
+
+//   return (
+//     <nav style={styles.navbar}>
+//       <div style={styles.container}>
+//         <div style={styles.logoContainer}>
+//           <img src={logo} alt="Institute Logo" style={styles.logo} />
+//           <span style={styles.instituteName}>IIPE</span>
+//         </div>
+
+//         {/* Desktop Menu */}
+//         <div style={styles.menuContainer}>
+//           {navLinks.map((link, index) => (
+//             <div
+//               key={link.name}
+//               style={styles.menuItemContainer}
+//               onMouseEnter={() => setHoveredItem(link.name)}
+//               onMouseLeave={() => setHoveredItem(null)}
+//             >
+//               {link.path ? (
+//                 <a
+//                   href={link.path}
+//                   style={{
+//                     ...styles.menuItem,
+//                     ...(hoveredItem === link.name ? styles.menuItemHover : {}),
+//                   }}
+//                   onClick={link.onClick}
+//                 >
+//                   {link.name}
+//                 </a>
+//               ) : (
+//                 <div style={styles.menuItem}>
+//                   {link.name}
+//                 </div>
+//               )}
+//               {link.dropdownItems && (
+//                 <div style={styles.dropdown(hoveredItem === link.name)}>
+//                   {link.dropdownItems.map((item) => (
+//                     <a
+//                       key={item.name}
+//                       href={item.path}
+//                       style={styles.dropdownItem}
+//                       onClick={item.onClick}
+//                     >
+//                       {item.name}
+//                     </a>
+//                   ))}
+//                 </div>
+//               )}
+//             </div>
+//           ))}
+//         </div>
+
+//         {/* Hamburger Menu */}
+//         <button onClick={() => setIsOpen(!isOpen)} style={styles.hamburger}>
+//           <svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg">
+//             <path
+//               fill="#fff"
+//               d="M3 6h18M3 12h18M3 18h18"
+//               strokeWidth="2"
+//             />
+//           </svg>
+//         </button>
+
+//         {/* Mobile Menu */}
+//         <div style={styles.mobileMenu}>
+//           {navLinks.map((link) => (
+//             <div key={link.name}>
+//               {link.path ? (
+//                 <a href={link.path} style={styles.mobileMenuItem} onClick={link.onClick}>
+//                   {link.name}
+//                 </a>
+//               ) : (
+//                 <div
+//                   style={styles.mobileMenuItem}
+//                   onClick={() => setActiveDropdown(link.name)}
+//                 >
+//                   {link.name}
+//                 </div>
+//               )}
+//               {link.dropdownItems && activeDropdown === link.name && (
+//                 <div style={{ backgroundColor: "#16a085" }}>
+//                   {link.dropdownItems.map((item) => (
+//                     <a
+//                       key={item.name}
+//                       href={item.path}
+//                       style={styles.mobileMenuItem}
+//                       onClick={item.onClick}
+//                     >
+//                       {item.name}
+//                     </a>
+//                   ))}
+//                 </div>
+//               )}
+//             </div>
+//           ))}
+//         </div>
+//       </div>
+//     </nav>
+//   );
+// };
+
 // export default Navbar1;
 
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import logo from "../assets/logo.jpg";
-import axios from "axios";
+import LogoutButton from "../pages/logout";
+import { useNavigate } from "react-router-dom";
+import AuthContext from '../context/AuthContext';
 
 const Navbar1 = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [hoveredItem, setHoveredItem] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [resources, setResources] = useState([]);
+  const navigate = useNavigate();
+
+  const { user, role, authTokens, isAuthenticated, logoutUser } = useContext(AuthContext); // Correctly accessing context
 
   useEffect(() => {
     const handleResize = () => {
@@ -329,104 +646,52 @@ const Navbar1 = () => {
   }, []);
 
   useEffect(() => {
-    const accessToken = sessionStorage.getItem("access_token");
-    const refreshToken = localStorage.getItem("refresh_token");
-    setIsAuthenticated(!!accessToken && !!refreshToken);
-  }, []);
+    
+}, [isAuthenticated, user]);
 
-
-  
-  useEffect(() => {
-    const fetchServices = async () => {
-      const storedUser = JSON.parse(localStorage.getItem("user"));
-      const userRole = storedUser ? storedUser.role : null;
-
-      // Only fetch if user is authenticated and role is available
-      if (isAuthenticated && userRole) {
-        const apiUrl = `/api/services/?role=${userRole}`;
-        try {
-          const response = await axios.get(apiUrl);
-          setResources(response.data); // Set resources here
-          console.log("Fetched services:", response.data);
-        } catch (error) {
-          console.error("Error fetching services:", error);
-        }
-      }
-      else{
-        const apiUrl = "/api/services";
-        try {
-          const response = await axios.get(apiUrl);
-          setResources(response.data); // Set resources here
-          console.log("Fetched services:", response.data);
-        } catch (error) {
-          console.error("Error fetching services:", error);
-        }
-      }
-    };
-
-    fetchServices();
-  }, [isAuthenticated]);
-
-  const logout = async () => {
-    try {
-      const response = await axios.post(
-        "/api/logout/",
-        { refresh: sessionStorage.getItem("refresh_token") },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${sessionStorage.getItem("access_token")}`,
-          },
-        }
-      );
-  
-      if (response.status === 205) {
-        sessionStorage.clear();
-        localStorage.clear();
-        setIsAuthenticated(false);
-        setResources([]); // Clear resources on logout
-        alert("Logout successfully.");
-        window.location.href = "/";
-      }
-    } catch (error) {
-      console.error("Logout error:", error);
-      alert("Something went wrong. Please try again.");
-    }
+  // const handleLogout = async () => {
+  //   logoutUser(); // Use logoutUser function from context for proper logout
+  //   // Redirect to login page after logout
+  // };
+  const logout = () => {
+    logoutUser();
   };
-  
 
-    const styles = {
+  const styles = {
     navbar: {
-      backgroundColor: "#f47c21",
+      backgroundColor: "#2c3e50",
       width: "100%",
       position: "fixed",
       top: 0,
       left: 0,
       zIndex: 1001,
-      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+      boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+      transition: "all 0.3s ease",
     },
     container: {
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      minHeight: "100px",
-      padding: "0 20px",
+      padding: "10px 30px",
       position: "relative",
+      maxWidth: "1200px",
+      margin: "0 auto",
     },
     logoContainer: {
       display: "flex",
       alignItems: "center",
     },
     logo: {
-      maxHeight: "100px",
-      width: "120px",
+      maxHeight: "80px",
+      width: "100px",
       marginRight: "15px",
     },
     instituteName: {
       color: "white",
       fontWeight: "bold",
-      fontFamily: "Times New Roman",
-      fontSize: isMobile ? "1.5rem" : "1.8rem",
+      fontFamily: "Arial, sans-serif",
+      fontSize: isMobile ? "1.5rem" : "2rem",
+      transition: "all 0.3s ease",
     },
     menuContainer: {
       display: isMobile ? "none" : "flex",
@@ -435,12 +700,17 @@ const Navbar1 = () => {
     },
     menuItem: {
       color: "white",
-      fontSize: "1rem",
-      marginLeft: "20px",
+      fontSize: "1.1rem",
+      marginLeft: "30px",
       textDecoration: "none",
-      padding: "10px 15px",
+      padding: "12px 18px",
       position: "relative",
       cursor: "pointer",
+      borderRadius: "4px",
+      transition: "background-color 0.3s ease",
+    },
+    menuItemHover: {
+      backgroundColor: "#16a085",
     },
     hamburger: {
       display: isMobile ? "block" : "none",
@@ -456,41 +726,38 @@ const Navbar1 = () => {
       top: "100%",
       left: 0,
       right: 0,
-      backgroundColor: "#f47c21",
+      backgroundColor: "#34495e",
       padding: "10px 0",
-      boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
     },
     mobileMenuItem: {
       color: "white",
       padding: "12px 20px",
       display: "block",
-      borderBottom: "1px solid rgba(255,255,255,0.1)",
+      borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
       cursor: "pointer",
+      transition: "background-color 0.3s ease",
     },
     dropdown: (isVisible) => ({
       position: "absolute",
       top: "100%",
       left: 0,
-      backgroundColor: "#f47c21",
-      minWidth: "200px",
-      boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+      backgroundColor: "#16a085",
+      minWidth: "180px",
+      boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
       display: isVisible ? "block" : "none",
       zIndex: 1001,
+      borderRadius: "4px",
     }),
-    dropdownMobile: {
-      position: "static",
-      backgroundColor: "rgba(255,255,255,0.1)",
-      boxShadow: "none",
-      display: "block",
-      padding: "0 20px",
-    },
     dropdownItem: {
       color: "white",
       padding: "10px 15px",
       display: "block",
       textDecoration: "none",
-      whiteSpace: "nowrap",
-      transition: "background-color 0.3s",
+      transition: "background-color 0.3s ease",
+    },
+    dropdownItemHover: {
+      backgroundColor: "#1abc9c",
     },
     menuItemContainer: {
       position: "relative",
@@ -517,18 +784,11 @@ const Navbar1 = () => {
       ],
     },
     { name: "Placements", path: "/placements" },
-    {
-      name: "Resources",
-      dropdownItems: resources.map((resource) => ({
-        name: resource.service_name,
-        
-        path: '/',
-      })),
-    },
+    { name: "Resources", path: "/services" },
     {
       name: "User",
       dropdownItems: isAuthenticated
-        ? [{ name: "Logout", path: "/", onClick: () => logout() }]
+        ? [{ name: "Logout", path: "#", onClick:logout}]
         : [
             { name: "Student", path: "/login?role=Student" },
             { name: "Employee", path: "/login?role=Employee" },
@@ -538,6 +798,10 @@ const Navbar1 = () => {
           ],
     },
   ];
+
+  // const checkLoginStatus = () => {
+  //   navigate(isAuthenticated ? "/services" : "/services"); // Redirect based on authentication status
+  // };
 
   return (
     <nav style={styles.navbar}>
@@ -559,7 +823,10 @@ const Navbar1 = () => {
               {link.path ? (
                 <a
                   href={link.path}
-                  style={styles.menuItem}
+                  style={{
+                    ...styles.menuItem,
+                    ...(hoveredItem === link.name ? styles.menuItemHover : {}),
+                  }}
                   onClick={link.onClick}
                 >
                   {link.name}
@@ -571,55 +838,6 @@ const Navbar1 = () => {
               )}
               {link.dropdownItems && (
                 <div style={styles.dropdown(hoveredItem === link.name)}>
-                  {link.dropdownItems.map((item) => (
-                    item.onClick ? (
-                      <button
-                        key={index}
-                        onClick={item.onClick}
-                        style={styles.dropdownItem}
-                      >
-                        {item.name}
-                      </button>
-                    ) : <a
-                        key={item.name}
-                        href={item.path}
-                        style={styles.dropdownItem}
-                        onClick={item.onClick}
-                      >
-                        {item.name}
-                      </a>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Hamburger Menu */}
-        <button onClick={() => setIsOpen(!isOpen)} style={styles.hamburger}>
-          <svg /* SVG icon code */ />
-        </button>
-
-        {/* Mobile Menu */}
-        <div style={styles.mobileMenu}>
-          {navLinks.map((link) => (
-            <div key={link.name}>
-              {link.path ? (
-                <a href={link.path} style={styles.mobileMenuItem} onClick={link.onClick}>
-                  {link.name}
-                </a>
-              ) : (
-                <div
-                  style={styles.mobileMenuItem}
-                  onClick={() =>
-                    setActiveDropdown(activeDropdown === link.name ? null : link.name)
-                  }
-                >
-                  {link.name}
-                </div>
-              )}
-              {link.dropdownItems && activeDropdown === link.name && (
-                <div style={{ ...styles.dropdown(true), ...styles.dropdownMobile }}>
                   {link.dropdownItems.map((item) => (
                     <a
                       key={item.name}
@@ -635,9 +853,38 @@ const Navbar1 = () => {
             </div>
           ))}
         </div>
+
+        {/* Hamburger Menu */}
+        <button onClick={() => setIsOpen(!isOpen)} style={styles.hamburger}>
+          <svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              fill="#fff"
+              d="M3 6h18M3 12h18M3 18h18"
+              strokeWidth="2"
+            />
+          </svg>
+        </button>
+
+        {/* Mobile Menu */}
+        <div style={styles.mobileMenu}>
+          {navLinks.map((link) => (
+            <div key={link.name}>
+              {link.path ? (
+                <a href={link.path} style={styles.mobileMenuItem}>
+                  {link.name}
+                </a>
+              ) : (
+                <div style={styles.mobileMenuItem}>
+                  {link.name}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </nav>
   );
 };
 
 export default Navbar1;
+

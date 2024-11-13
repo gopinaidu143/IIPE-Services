@@ -17,4 +17,21 @@ def send_otp_email(email, otp):
         )
     except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+def send_opd_email(email,applicant_name):
+    try:
+        subject = 'OPD Form Request'
+        message = f'{applicant_name} Requested for OPD Referal!'
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            fail_silently=False,
+        )
+    except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
         

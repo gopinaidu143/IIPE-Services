@@ -2,13 +2,14 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated,AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken,TokenError
 from rest_framework_simplejwt.views import TokenRefreshView
-from .models import MasterData, Degree, Student, Faculty,Role,Employee,Alumni,ExEmployee,Department,Designation,UserAccount,Service,RoleServiceAssignment
-from .serializers import UserRegistrationSerializer,LoginSerializer,ServiceSerializer
+from .models import MasterData, Degree, Student, Faculty,Role,Employee,Alumni,ExEmployee,Department,Designation,UserAccount,Service,RoleServiceAssignment,Dependents,Hospital
+from .serializers import UserRegistrationSerializer,LoginSerializer,ServiceSerializer,MasterDataSerializer, DependentSerializer, HospitalSerializer
+from django.shortcuts import get_object_or_404
 import pyotp
-from .send_mails import send_otp_email
+from .send_mails import send_otp_email,send_opd_email
 from django.utils import timezone
 from datetime import datetime, timedelta
 from dateutil import parser
@@ -214,53 +215,91 @@ class RegisterAPIView(APIView):
 
 
 class LoginAPIView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
             refresh = RefreshToken.for_user(user)
-            return Response({
-                'refresh': str(refresh),
+            refresh['username'] = user.username
+            refresh['role'] = user.role.role_name
+            refresh['email'] = user.email
+            response =  Response({
+                # 'refresh': str(refresh),
                 'access': str(refresh.access_token),
                 'user': {
                     'email': user.email,
                     'username': user.username,
                     'role': user.role.role_name,
+                    
                 },
                 "message": "Login successful."
             }, status=status.HTTP_200_OK)
+            response.set_cookie(
+                key="refresh_token",
+                value=str(refresh),
+                httponly=True,
+                # secure=True,
+                # samesite='Lax'
+            )
+            return response
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+
+
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        # Attempt to retrieve the refresh token from cookies
+        refresh_token = request.COOKIES.get("refresh_token")
+        # print(refresh_token)
+        # If the refresh token is missing, return an error response
+        if not refresh_token:
+            return Response(
+                {"error": "Refresh token is required for logout."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         try:
-            # Get the refresh token from the request data
-            refresh_token = request.data["refresh"]
+            # Create a RefreshToken instance from the token and blacklist it
             token = RefreshToken(refresh_token)
-            token.blacklist()  # Blacklist the token
+            token.blacklist()
 
-            return Response({"message": "Successfully logged out"}, status=status.HTTP_205_RESET_CONTENT)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
+            # Prepare the response and clear the refresh token cookie
+            response = Response(
+                {"message": "Successfully logged out"},
+                status=status.HTTP_205_RESET_CONTENT
+            )
+            response.delete_cookie("refresh_token")
 
+            return response
 
+        except TokenError as e:
+            # Handle cases where the token might already be expired or invalid
+            return Response(
+                {"error": "Invalid or expired refresh token."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 class CustomTokenRefreshView(TokenRefreshView):
-    def post(self, request, *args, **kwargs):
-        refresh = request.data.get("refresh", None)
+    def post(self, request):
+        # Get the refresh token from the cookie
+        refresh_token = request.COOKIES.get("refresh_token")
+
+        if not refresh_token:
+            return Response({"error": "Refresh token missing."}, status=status.HTTP_400_BAD_REQUEST)
         
-        if refresh is None:
-            return Response({"error": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            # Generate a new access token using the refresh token
+            
+            refresh = RefreshToken(refresh_token)
+            access_token = refresh.access_token
 
-        response = super().post(request, *args, **kwargs)
-
-        if response.status_code == status.HTTP_200_OK:
-            return Response({"access": response.data.get("access")}, status=status.HTTP_200_OK)
-        else:
-            # Return failure response from the parent method
-            return Response(response.data, status=response.status_code)
+            return Response({"access": str(access_token)}, status=status.HTTP_200_OK)
+        
+        except TokenError:
+            return Response({"error": "Invalid or expired refresh token."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ForgotPasswordView(APIView):
@@ -373,3 +412,65 @@ class ServiceListView(APIView):
         
         serializer = ServiceSerializer(services, many=True)
         return Response(serializer.data)
+
+
+
+class EmployeeDataView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, email_id):
+        # Retrieve employee information
+        try:
+            # employee = get_object_or_404(MasterData, email=email_id, role__in=["faculty", "employee"])
+
+            employee = get_object_or_404(MasterData, email=email_id)
+            employee_data = MasterDataSerializer(employee).data
+
+            # Retrieve dependents information for the employee
+
+            dependents = Dependents.objects.filter(related_employee=employee)
+            dependents_data = DependentSerializer(dependents, many=True).data
+
+            # Retrieve all hospitals (optional: filter hospitals if needed)
+            hospitals = Hospital.objects.all()
+            hospitals_data = HospitalSerializer(hospitals, many=True).data
+
+            # Construct response data
+            data = {
+                'employee': employee_data,
+                'dependents': dependents_data,
+                'hospitals': hospitals_data
+            }
+            return Response(data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DependentDataView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, dependent_id):
+        # Retrieve specific dependent information
+        try:
+            dependent = get_object_or_404(Dependents, dependent_id=dependent_id)
+            dependent_data = DependentSerializer(dependent).data
+            return Response(dependent_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class OPDView(APIView):
+    def post(self, request):
+        try:
+            data = request.data
+            applicant_name = request.data.get("employeeName")
+            print(data)
+
+            # email = 'lab.cs@iipe.ac.in'
+            email = 'surendrakoppala07@gmail.com'
+            # send_opd_email(email,applicant_name)
+            
+            return Response({"message": "Form Successfully submitted!"}, status=status.HTTP_200_OK)
+
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

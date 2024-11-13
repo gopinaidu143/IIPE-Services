@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from 'react';
 import Navbar1 from "../components/navbar1";
-import axios from "axios";
 import { useLocation, Link, useNavigate } from "react-router-dom";
+import AuthContext from '../context/AuthContext';
+
 
 const LoginPage = () => {
   const location = useLocation();
@@ -12,6 +13,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const { loginUser } = useContext(AuthContext);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,30 +22,8 @@ const LoginPage = () => {
       alert("Please enter both email and password.");
       return;
     }
+    loginUser(email, password, role);
 
-    try {
-      const response = await axios.post("/api/login/", {
-        email,
-        password,
-        role,
-      });
-
-      const { access, refresh, user, message } = response.data;
-
-      // Display success message and navigate to homepage
-      alert(message);
-
-      // Store tokens and user info
-      sessionStorage.setItem("access_token", access);
-      localStorage.setItem("refresh_token", refresh);
-      localStorage.setItem("user", JSON.stringify(user));
-
-      // Redirect to home page
-      navigate("/");
-    } catch (err) {
-      console.error("Login failed", err);
-      setError("Invalid email, password, or role. Please try again.");
-    }
   };
 
   return (

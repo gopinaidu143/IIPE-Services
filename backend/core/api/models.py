@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.core.validators import MaxValueValidator
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 
 
 
@@ -57,6 +59,8 @@ class MasterData(models.Model):
     date_of_retirement = models.DateField(null=True,blank=True)
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
     no_dependents = models.PositiveIntegerField(validators=[MaxValueValidator(7)])
+    contact_no = models.CharField(max_length=10)
+
 
 
     def __str__(self):
@@ -64,10 +68,11 @@ class MasterData(models.Model):
     
 
 class Dependents(models.Model):
-    related_emp_or_student = models.ForeignKey(MasterData, on_delete=models.CASCADE, related_name='dependents')
+    related_employee = models.ForeignKey(MasterData, on_delete=models.CASCADE, related_name='dependents')
+    dependent_id = models.CharField(max_length=20)
     dependent_name = models.CharField(max_length=100)
-    gender = models.CharField(max_length=1, choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')]) 
-    aadhar_number = models.CharField(max_length=12)
+    dob = models.DateField()
+    gender = models.CharField(max_length=10, choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')]) 
     relation = models.CharField(max_length=50)  
     id_proof = models.BinaryField(null=True, blank=True)
     is_exist = models.BooleanField(default=True)  # Marks existence status
@@ -75,7 +80,21 @@ class Dependents(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.dependent_name} ({self.relation})"
+        return f"{self.related_employee.username} - {self.dependent_name} ({self.relation})"
+    
+    def clean(self):
+        allowed_roles = ['faculty', 'employee']
+        if self.related_employee.role.role_name.lower() not in allowed_roles:
+            raise ValidationError(_("Dependents can only be added for faculty or employee roles."))
+
+        current_dependents_count = self.related_employee.dependents.count()
+        if current_dependents_count >= self.related_employee.no_dependents:
+            raise ValidationError(_("Cannot add more than %(max_dependents)s dependents."),
+                                  params={'max_dependents': self.related_employee.no_dependents})
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
 class Department(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -183,7 +202,7 @@ class Student(models.Model):
     user = models.OneToOneField(UserAccount, on_delete=models.PROTECT)
     student_id = models.CharField(max_length=20)
     department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name="students")
-    gender = models.CharField(max_length=1, choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
+    gender = models.CharField(max_length=10, choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
     address = models.TextField(max_length=500)
     contact_no = models.CharField(max_length=10)
     father_name = models.CharField(max_length=100)
@@ -205,7 +224,7 @@ class Faculty(models.Model):
     faculty_id = models.CharField(max_length=20)
     department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name="faculty")
     joined_date = models.DateField()
-    gender = models.CharField(max_length=1, choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
+    gender = models.CharField(max_length=10, choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
     contact_no = models.CharField(max_length=10)
     address = models.TextField(max_length=500)
     designation = models.ForeignKey(Designation, on_delete=models.PROTECT, related_name="faculty")
@@ -222,7 +241,7 @@ class Employee(models.Model):
     employee_id = models.CharField(max_length=20)
     department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name="employee")
     joined_date = models.DateField()
-    gender = models.CharField(max_length=1, choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
+    gender = models.CharField(max_length=10, choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
     contact_no = models.CharField(max_length=10)
     address = models.TextField(max_length=500)
     designation = models.ForeignKey(Designation, on_delete=models.PROTECT, related_name="employee")
@@ -239,7 +258,7 @@ class Alumni(models.Model):
     alumni_id = models.CharField(max_length=20)
     department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name="alumini")
     graduation_date= models.DateField()
-    gender = models.CharField(max_length=1, choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
+    gender = models.CharField(max_length=10, choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
     address = models.TextField(max_length=500)
     contact_no = models.CharField(max_length=10)
     father_name = models.CharField(max_length=100)
@@ -260,7 +279,7 @@ class ExEmployee(models.Model):
     employee_id = models.CharField(max_length=20)
     department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name="exemployee")
     retirement_date = models.DateField()
-    gender = models.CharField(max_length=1, choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
+    gender = models.CharField(max_length=10, choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
     contact_no = models.CharField(max_length=10)
     address = models.TextField(max_length=500)
     designation = models.ForeignKey(Designation, on_delete=models.PROTECT, related_name="exemployee")
@@ -286,4 +305,36 @@ class Admin(models.Model):
 
     def __str__(self):
         return self.admin_id
+
+
+
+
+class OPDFormData(models.Model):
+    referral_id = models.CharField(max_length=15, unique=True, editable=False)
+    employee_name = models.CharField(max_length=255)
+    employee_code = models.CharField(max_length=50)
+    dependent_name = models.CharField(max_length=255)
+    dependent_id = models.CharField(max_length=50, unique=True)
+    relation_with_employee = models.CharField(max_length=50)
+    dob = models.DateField()
+    age = models.PositiveIntegerField()
+    gender = models.CharField(max_length=10, choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
+    tentative_visit_from = models.DateField()
+    tentative_visit_to = models.DateField()
+    hospital_name = models.CharField(max_length=255)
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    approved_by = models.CharField(max_length=255)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    opd_form = models.BinaryField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.employee_name} - {self.referral_id}"
+
 

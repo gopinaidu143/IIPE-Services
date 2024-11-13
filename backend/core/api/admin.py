@@ -17,6 +17,8 @@ admin.site.register(models.Faculty)
 admin.site.register(models.Student)
 admin.site.register(models.Alumni)
 admin.site.register(models.ExEmployee)
+admin.site.register(models.Dependents)
+admin.site.register(models.OPDFormData)
 
 
 
