@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>IIPE Outpatient Referral Form</title>
+    <style>
+        body {
+            font-family: 'Tahoma', sans-serif;
+            line-height: 1.3;
+            margin: 0;
+            padding: 5px;
+            background-color: #fff;
+        }
+        .logo {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 80px;
+            height: auto;
+        }
+        .photo {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 80px;
+            height: auto;
+            border: 1px solid #000;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            border: 1px solid #000;
+            padding: 5px;
+            position: relative;
+            font-size: 14px;
+            text-align: justify;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px; /* Reduced margin */
+            font-size: 16px;
+            font-weight: bold;
+        }
+        h3 {
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 45px; /* Added margin to position below logo */
+            margin-bottom: 15px;
+        }
+        th, td {
+            border: 1px solid #ffffff;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            align-items: center;
+        }
+        .signature-line {
+            border-top: 1px solid #000;
+            width: 200px;
+            display: inline-block;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .footer {
+            font-size: 12px;
+            text-align: justify;
+            margin-top: 10px;
+        }
+        .signature-image {
+            width: 150px;
+            height: auto;
+        }
+        .right-align {
+            text-align: right;
+            flex-grow: 1; /* Allow this section to grow */
+        }
+        @media print {
+            body {
+                margin: 0;
+            }
+            .container {
+                width: 100%;
+                border: none; /* Remove border for printing */
+            }
+            table {
+                page-break-inside: avoid; /* Prevent table from breaking */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="{{ logo_url }}" alt="IIPE Logo" class="logo">
+        <img src="data:image/jpeg;base64,{{dependent_img}}" alt="User   Photo" class="photo">
+        <h1>INDIAN INSTITUTE OF PETROLEUM AND ENERGY<br>VISAKHAPATNAM<br><u>OUTPATIENT REFERRAL FORM</u></h1>
+        
+        <table>
+            <tr>
+                <th>1. OPD Referral No :</th>
+                <td>{{ opd_form.referral_id }}</td>
+            </tr>
+            <tr>
+                <th>2. Name of Employee/Faculty & Code:</th>
+                <td>{{ opd_form.employee_name }} ({{ opd_form.employee_code }})</td>
+            </tr>
+            <tr>
+                <th>3. Contact No:</th>
+                <td>{{ opd_form.contact_no }}</td>
+            </tr>
+            <tr>
+                <th>4. Name of the Dependent:</th>
+                <td>{{ opd_form.dependent_name }}</td>
+            </tr>
+            <tr>
+                <th>5. Relationship with the Employee:</th>
+                <td>{{ opd_form.relation_with_employee }}</td>
+            </tr>
+            <tr>
+                <th>6. Dependent's ID:</th>
+                <td>{{ opd_form.dependent_id }}</td>
+            </tr>
+            <tr>
+                <th>7. Age & Gender of the Dependent:</th>
+                <td>{{ opd_form.age }} / {{ opd_form.gender }}</td>
+            </tr>
+            <tr>
+                <th>8. Tentative date/week of visit to Hospital:</th>
+                <td>
+                    <span>{{ opd_form.tentative_visit_from }}</span> to <span >{{ opd_form.tentative_visit_to }}</span>
+                </td>
+            </tr>
+            <tr>
+                <th>9. Hospital/Service :</th>
+                <td>{{ opd_form.hospital_name }}</td>
+            </tr>
+        </table>
+        
+        <div class="signature-section">
+            <div>
+                <td>I voluntarily choose <b>{{ opd_form.hospital_name }}</b> Hospital for OPD treatment.</td><br>
+            </div>
+            <div>
+                <label>Date : <b>{{ opd_form.created_at }}</b></label>
+            </div>
+            <div class="right-align">
+                <div class="signature-line"></div>
+                <div class="signature-label">Signature of the Employee</div>
+            </div>
+        </div>
+        
+        <div class="office-use">
+            <h3><u>FOR OFFICE PURPOSE</u></h3>
+            <p>
+               A. Referred to Hospital for OPD treatment on 
+               {% if employee_type == 'regular' %}
+                   cashless basis
+               {% else %}
+                   self-payment
+               {% endif %}
+               on CGHS Rates. This OPD referral form is valid between {{ opd_form.tentative_visit_from }} to {{ opd_form.tentative_visit_to }}.
+           </p>
+            <p>B. OPD Referral No: <span class="input-field" style="width: 40px;"><b>{{ opd_form.referral_id }}</b></span>
+            
+            <div class="signature-section">
+                <div>
+                    <label>Date : <b>{{ opd_form.approved_rejected_at }}</b></label>
+                </div>
+                <div class="right-align">
+                    <img src="{{ signature_url }}" alt="Authorized Signature" class="signature-image">
+                    <div class="signature-label">Sign of Authorized Signatory, IIPE</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="checklist">
+            <h3><u>CHECKLIST (FOR EMPLOYEES)</u></h3>
+            <ol>
+                <li>Duly filled & signed referral proforma.</li>
+                <li>Employee ID Card / Aadhaar Card</li>
+            </ol>
+        </div>
+        
+        <div class="diagnosis">
+            <h3><u>DIAGNOSIS/CASE SUMMARY/TESTS CONDUCTED<br>(TO BE FILLED BY THE HOSPITAL)</u></h3>
+            <div class="signature-section">
+                <div class="right-align">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Signature of Authorized signatory of the Hospital</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+           <p>The referred hospital is requested to raise the bill as per the agreement on the standard proforma enclosing this institute-issued referral form and other supporting documents giving the account number and RTGS number etc., addressed to 'The Registrar, Indian Institute of Petroleum and Energy, 2nd Floor, Main Building, AU College of Engineering, Visakhapatnam – 530003, Tele : 0891-2856012.'</p> 
+           <small><p>Auto-Generated File: This document was automatically generated by the system on {{ opd_form.approved_rejected_at }}.</p>
+           </small>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const inputFields = document.querySelectorAll('.input-field');
+
+            inputFields.forEach(function(inputField) {
+                inputField.addEventListener("input", function() {
+                    this.style.width = (this.value.length + 1) + "ch"; /* Adjust width based on input */
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
+

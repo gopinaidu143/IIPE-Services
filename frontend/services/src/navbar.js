@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Menu } from "semantic-ui-react";
 import { Link } from "react-router-dom";
-import logo from "./assets/logo.jpg";
+import logo from "./assets/logo.png";
 
 const Navbar = () => {
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -59,7 +59,7 @@ const Navbar = () => {
 
   const styles = {
     navbar: {
-      backgroundColor: "#ff9833",
+      backgroundColor: "rgb(44, 62, 80)",
       width: "100%",
       display: "flex",
       flexDirection: isMobile ? "column" : "row",
@@ -233,7 +233,7 @@ const Navbar = () => {
 
         <Menu.Item
           as={Link}
-          to="/about"
+          to="/GuestHousebooking/about"
           style={{
             ...styles.menuItem,
             ...(hoveredItem === "About" ? styles.hoveredMenuItem : {}),

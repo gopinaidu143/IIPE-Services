@@ -59,6 +59,12 @@ const LoginPage = () => {
                 Register here
               </Link>
             </p>
+            <p style={styles.registerText}>
+              Forgot Password?{" "}
+              <Link to="/passwordchange" style={styles.registerLink}>
+                change here
+              </Link>
+            </p>
           </form>
         </div>
       </div>
@@ -80,7 +86,7 @@ const styles = {
     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
     padding: '30px',
     width: '450px',
-    height: '275px',
+    height: '300px',
     textAlign: 'center',
   },
   title: {

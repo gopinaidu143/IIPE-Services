@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import AuthContext from '../context/AuthContext';
+import AuthContext from '../../context/AuthContext';
 import axios from 'axios';
 
 export default function OPD() {
@@ -67,6 +67,15 @@ export default function OPD() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({ ...prevData, [name]: value }));
+    const newErrors = {};
+    if (formData.visitFromDate && formData.visitToDate) {
+      const visitFrom = new Date(formData.visitFromDate);
+      const visitTo = new Date(formData.visitToDate);
+      if (visitFrom >= visitTo) {
+        newErrors.visitToDate = 'To date must be after from date';
+      }
+    }
+    
 
     if (name === 'DependentName') {
       const selectedDependent = dependents.find(dep => dep.dependent_name === value);
@@ -149,19 +158,63 @@ export default function OPD() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+    
+  //   if (validate()) {
+  //     const { PhotoProof, ...formDataWithoutPhoto } = formData; 
+  //     console.log(formDataWithoutPhoto); 
+  //     alert('Form submitted successfully');
+  //     const response = axios.post("/api/submit-opd/", {formDataWithoutPhoto}, {
+  //       withCredentials: true,
+  //   });
+  //   if(response.status == 200 ){
+  //     alert('Form submitted successfully');
+  //   }
+  //   } else {
+  //     alert('Please fix the errors in the form');
+  //   }
+  // };
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (validate()) {
-      const { PhotoProof, ...formDataWithoutPhoto } = formData; // Exclude PhotoProof
-      console.log(formDataWithoutPhoto); // Log the form data without the photo
+      const { PhotoProof, ...formDataWithoutPhoto } = formData; 
+      console.log(formDataWithoutPhoto); 
       
-      const response = axios.post("/api/submit-opd/", {formDataWithoutPhoto}, {
-        withCredentials: true,
-    });
-    if(response.status == 200 ){
-      alert('Form submitted successfully');
-    }
+      try {
+        const response = await axios.post("/api/submit-opd/",  formDataWithoutPhoto, {
+          headers: {
+            Authorization: `Bearer ${authTokens}`, // Include the token here
+          },
+          withCredentials: true,
+        });
+        
+        if (response.status === 200) {
+          alert('Form submitted successfully');
+          
+          // Clear form data
+          setFormData({
+            employeeName: '',
+            employeeCode: '',
+            contactNumber: '',
+            DependentName: '',
+            relationshipWithEmployee: '',
+            DependentId: '',
+            DependentAge: '',
+            DependentGender: '',
+            visitFromDate: '',
+            visitToDate: '',
+            chosenHospital: '',
+            todayDate: new Date().toISOString().split('T')[0],
+            DateOfBirth: '',
+            PhotoProof: '',
+          });
+        }
+      } catch (error) {
+        console.error('Error submitting form:', error);
+        alert('There was an error submitting the form');
+      }
     } else {
       alert('Please fix the errors in the form');
     }
@@ -186,7 +239,7 @@ export default function OPD() {
     },
     header: {
       padding: '1.5rem',
-      backgroundColor: 'grey',
+      backgroundColor: 'black',
       color: 'white',
     },
     headerText: {
@@ -426,10 +479,9 @@ export default function OPD() {
                 />
                 {errors.visitToDate && <span style={styles.error}>{errors.visitToDate}</span>}
               </div>
-
               <div style={styles.inputGroup}>
-                <label htmlFor="chosenHospital" style={styles.label}>Choose Hospital/Diagnostic center:</label>
-                <select
+              <label htmlFor="chosenHospital" style={styles.label}>Choose Hospital/Diagnostic center:</label>
+              <select
                   id="chosenHospital"
                   name="chosenHospital"
                   value={formData.chosenHospital}
@@ -437,13 +489,13 @@ export default function OPD() {
                   style={styles.select}
                 >
                   <option value="">Select Hospital</option>
-                  {hospitals.map((hosp) => (
-                    <option key={hosp.hospital_name} value={hosp.hospital_name}>{hosp.hospital_name}</option>
+                  {hospitals.map((hosp, index) => (
+                    <option key={`${hosp.hospital_name}-${index}`} value={hosp.hospital_name}>
+                      {hosp.hospital_name}
+                    </option>
                   ))}
                 </select>
-                {errors.chosenHospital && <span style={styles.error}>{errors.chosenHospital}</span>}
-              </div>
-
+                </div>
               <div style={styles.inputGroup}>
                 <label htmlFor="PhotoProof" style={styles.label}>Dependent's Photo:</label>
                 <div>

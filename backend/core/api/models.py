@@ -60,7 +60,8 @@ class MasterData(models.Model):
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
     no_dependents = models.PositiveIntegerField(validators=[MaxValueValidator(7)])
     contact_no = models.CharField(max_length=10)
-
+    employee_type = models.CharField(max_length=50,choices=[('contract', 'Contract'), ('regular', 'Regular')])
+    is_active = models.BooleanField(default=True)
 
 
     def __str__(self):
@@ -311,25 +312,27 @@ class Admin(models.Model):
 
 class OPDFormData(models.Model):
     referral_id = models.CharField(max_length=15, unique=True, editable=False)
+    employee = models.ForeignKey(MasterData, on_delete=models.CASCADE, related_name="opd_forms") 
     employee_name = models.CharField(max_length=255)
     employee_code = models.CharField(max_length=50)
     dependent_name = models.CharField(max_length=255)
-    dependent_id = models.CharField(max_length=50, unique=True)
+    dependent_id = models.CharField(max_length=50)
     relation_with_employee = models.CharField(max_length=50)
     dob = models.DateField()
     age = models.PositiveIntegerField()
     gender = models.CharField(max_length=10, choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
+    contact_no = models.CharField(max_length=10)
     tentative_visit_from = models.DateField()
     tentative_visit_to = models.DateField()
-    hospital_name = models.CharField(max_length=255)
+    hospital_name = models.TextField(null=False)
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
     ]
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-    approved_by = models.CharField(max_length=255)
-    approved_at = models.DateTimeField(null=True, blank=True)
+    approved_rejected_by = models.CharField(max_length=255)
+    approved_rejected_at = models.DateTimeField(null=True, blank=True)
     opd_form = models.BinaryField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -3,15 +3,17 @@ from  api.models import Service
 
 # Sample data for bulk insertion
 services = [
-    {"service_name":"email_request"},
-    {"service_name":"software_request"},
-    {"service_name":"webmail_password_change"},
-    {"service_name":"circular"},
-    {"service_name":"academic_services"},
-    {"service_name":"it_services"},
-    {"service_name":"notifications"},
-    {"service_name":"opd_form"},
-    {"service_name":"guesthouse_booking"}    
+    {"service_name":"Email Requisition"},
+    {"service_name":"Software Requisition"},
+    {"service_name":"Webmail Password Change"},
+    {"service_name":"Circulars"},
+    {"service_name":"Academic Services"},
+    {"service_name":"IT Services"},
+    {"service_name":"Notifications"},
+    {"service_name":"OPD Form"},
+    {"service_name":"Guesthouse Booking"},
+    {"service_name":"Office Memorandums"},
+    {"service_name":"Events"}    
 ]
 
 

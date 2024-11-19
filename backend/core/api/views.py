@@ -5,15 +5,19 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken,TokenError
 from rest_framework_simplejwt.views import TokenRefreshView
-from .models import MasterData, Degree, Student, Faculty,Role,Employee,Alumni,ExEmployee,Department,Designation,UserAccount,Service,RoleServiceAssignment,Dependents,Hospital
-from .serializers import UserRegistrationSerializer,LoginSerializer,ServiceSerializer,MasterDataSerializer, DependentSerializer, HospitalSerializer
-from django.shortcuts import get_object_or_404
+from .models import MasterData, Degree, Student, Faculty,Role,Employee,Alumni,ExEmployee,Department,Designation,UserAccount,Service,RoleServiceAssignment,Dependents,Hospital,OPDFormData
+from .serializers import UserRegistrationSerializer,LoginSerializer,ServiceSerializer,MasterDataSerializer, DependentSerializer, HospitalSerializer,OPDUserSerializer,OPDAdminSerializer,DependentImaageSerializer
+from django.shortcuts import get_object_or_404,render
 import pyotp
-from .send_mails import send_otp_email,send_opd_email
+from .send_mails import send_otp_email,send_opd_email,opd_rejected_email
 from django.utils import timezone
 from datetime import datetime, timedelta
 from dateutil import parser
-from .utils import change_date
+from .utils import change_date,generate_pdf
+import uuid
+import threading
+
+from django.http import HttpResponse
 
 
 
@@ -282,6 +286,8 @@ class LogoutView(APIView):
                 {"error": "Invalid or expired refresh token."},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+            
 class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request):
         # Get the refresh token from the cookie
@@ -457,20 +463,167 @@ class DependentDataView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class OPDView(APIView):
+      
+
+class OPDSubmissionView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         try:
-            data = request.data
-            applicant_name = request.data.get("employeeName")
-            print(data)
+            data = request.data   
+            # print(data)        
+            # Generate the referral ID (employee_code + random 5-digit code)
+            referral_id = f"{data['employeeCode']}{uuid.uuid4().hex[:5].upper()}"
+            # Create a new OPDFormData instance
+            opd_form_data = OPDFormData(
+                employee = MasterData.objects.get(user_id=data.get('employeeCode')),
+                referral_id=referral_id,
+                employee_name=data.get("employeeName"),
+                employee_code=data.get("employeeCode"),
+                contact_no=data.get("contactNumber"),
+                dependent_name=data.get("DependentName"),
+                dependent_id=data.get("DependentId"),
+                relation_with_employee=data.get("relationshipWithEmployee"),
+                dob=change_date(data.get("DateOfBirth")),
+                age=data.get("DependentAge"),
+                gender=data.get("DependentGender")[0].upper(),  # e.g., 'O' for Others
+                tentative_visit_from=change_date(data.get("visitFromDate")),
+                tentative_visit_to=change_date(data.get("visitToDate")),
+                hospital_name=data.get("chosenHospital"),
+            )
+            data['referral_id']= referral_id
+            opd_form_data.save()
 
-            # email = 'lab.cs@iipe.ac.in'
-            email = 'surendrakoppala07@gmail.com'
-            # send_opd_email(email,applicant_name)
-            
-            return Response({"message": "Form Successfully submitted!"}, status=status.HTTP_200_OK)
+            # Send email notification (if needed)
+            applicant_name = data.get("employeeName")
+            # email = 'surendrakoppala07@gmail.com'
+            # # email = 'lab.cs@iipe.ac.in'
 
+            # send_opd_email(email, applicant_name, data)
+            print('successfully submitted')
+            return Response({"message": "Form successfully submitted!", "referral_id": referral_id}, status=status.HTTP_200_OK)
 
         except Exception as e:
+            print(e)
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+class UserOPDListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id):
+        try:
+            data = OPDFormData.objects.filter(employee__email=id)
+
+            if not data.exists():
+                return Response({"message": "Data not found!"}, status=status.HTTP_404_NOT_FOUND)
+
+            serializer = OPDUserSerializer(data, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print(e)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+class AdminOPDListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        try:
+            data = OPDFormData.objects.all()
+
+            if not data.exists():
+                return Response({"message": "Data not found!"}, status=status.HTTP_404_NOT_FOUND)
+
+            serializer = OPDAdminSerializer(data, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print(e)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+class ApproveRecord(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, record_id):
+        try:
+            record = OPDFormData.objects.get(referral_id=record_id)
+            record.status = 'approved'
+            record.approved_rejected_by = request.user.username
+            record.approved_rejected_at = timezone.now()
+            record.save()
+            # generates the pdf with loding the html template with our model data and convert it into pdf and stores the pdf in binary formet 
+            pdf_thread = threading.Thread(target=generate_pdf, args=(request,record_id,))
+            pdf_thread.start()
+            print('successfully accepted')
+            return Response({'message': 'Record approved successfully'}, status=status.HTTP_200_OK)
+        except OPDFormData.DoesNotExist:
+            return Response({'error': 'Record not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+class RejectRecord(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, record_id):
+        try:
+            record = OPDFormData.objects.get(referral_id=record_id)
+            record.status = 'rejected'
+            record.approved_rejected_by = request.user.username
+            record.approved_rejected_at = timezone.now()
+            record.save()
+            print('successfully rejected')
+
+            rejected_thread = threading.Thread(target=opd_rejected_email, args=(record.employee.email,record_id,))
+            rejected_thread.start()
+            
+            return Response({'message': 'Record rejected successfully'}, status=status.HTTP_200_OK)
+        except OPDFormData.DoesNotExist:
+            return Response({'error': 'Record not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+       
+def preview_pdf(request, doc_id):
+    try:
+        # Fetch the document based on the provided referral_id (doc_id)
+        document = OPDFormData.objects.get(referral_id=doc_id)
+    except OPDFormData.DoesNotExist:
+        return HttpResponse("Document not found", status=404)
+
+    # Serve the PDF as a response
+    response = HttpResponse(document.opd_form, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{doc_id}-opd-form.pdf"'  # Display inline in the browser
+    return response
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# def opd(request):
+    
+#         record_id = 'E123C736E'
+    
+#         record = OPDFormData.objects.get(referral_id=record_id)
+#         record.approved_rejected_at = record.approved_rejected_at.date()
+#         record.created_at = record.created_at.date()
+#         dependent_image = Dependents.objects.get(dependent_id=record.dependent_id)
+#         dependent_img = DependentImaageSerializer(dependent_image).data
+#         employee_type = MasterData.objects.filter(username=record.employee_name).values('employee_type').first()
+#         print(employee_type)
+#         # print(record)
+#         # print(dependent_img)
+
+#         return render(request, 'opd.html', {'opd_form':record,'dependent_img': dependent_img['id_proof_base64'],'employee_type': employee_type['employee_type']})
+        
 

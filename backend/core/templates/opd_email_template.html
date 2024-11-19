@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPD Form Request</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h3 {
+            color: #333;
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 16px;
+            color: #555;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            text-align: left;
+            font-size: 14px;
+            color: #333;
+        }
+
+        th {
+            background-color: #f7f7f7;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* Responsive styling */
+        @media (max-width: 600px) {
+            th, td {
+                font-size: 12px;
+                padding: 10px;
+            }
+
+            h3 {
+                font-size: 20px;
+            }
+
+            p {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>OPD Form Request</h3>
+        <p>{{ applicant_name }} has requested an OPD referral.</p>
+
+        <table>
+            <tr>
+                <th>Field</th>
+                <th>Details</th>
+            </tr>
+            <tr>
+                <td>Referral Id</td>
+                <td>{{ form_data.referral_id }}</td>
+            </tr>
+            <tr>
+                <td>Employee Name</td>
+                <td>{{ form_data.employeeName }}</td>
+            </tr>
+            <tr>
+                <td>Employee Code</td>
+                <td>{{ form_data.employeeCode }}</td>
+            </tr>
+            <tr>
+                <td>Contact Number</td>
+                <td>{{ form_data.contactNumber }}</td>
+            </tr>
+            <tr>
+                <td>Dependent Name</td>
+                <td>{{ form_data.DependentName }}</td>
+            </tr>
+            <tr>
+                <td>Relationship with Employee</td>
+                <td>{{ form_data.relationshipWithEmployee }}</td>
+            </tr>
+            <tr>
+                <td>Dependent ID</td>
+                <td>{{ form_data.DependentId }}</td>
+            </tr>
+            <tr>
+                <td>Dependent Age</td>
+                <td>{{ form_data.DependentAge }}</td>
+            </tr>
+            <tr>
+                <td>Dependent Gender</td>
+                <td>{{ form_data.DependentGender }}</td>
+            </tr>
+            <tr>
+                <td>Visit From Date</td>
+                <td>{{ form_data.visitFromDate }}</td>
+            </tr>
+            <tr>
+                <td>Visit To Date</td>
+                <td>{{ form_data.visitToDate }}</td>
+            </tr>
+            <tr>
+                <td>Chosen Hospital</td>
+                <td>{{ form_data.chosenHospital }}</td>
+            </tr>
+            <tr>
+                <td>Today's Date</td>
+                <td>{{ form_data.todayDate }}</td>
+            </tr>
+            <tr>
+                <td>Date of Birth</td>
+                <td>{{ form_data.DateOfBirth }}</td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

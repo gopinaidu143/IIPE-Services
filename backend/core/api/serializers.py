@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import UserAccount, MasterData, Student, Faculty, Admin,Role,Service,Dependents,Hospital
+from .models import UserAccount, MasterData, Student, Faculty, Admin,Role,Service,Dependents,Hospital,OPDFormData
 from django.contrib.auth import authenticate
 from django.db import models
 import base64
@@ -97,6 +97,33 @@ class HospitalSerializer(serializers.ModelSerializer):
         fields = ['hospital_name', 'contact_details', 'remarks']
 
 
+
+
+class OPDUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OPDFormData
+        fields = ['referral_id','dependent_id','dependent_name','relation_with_employee','created_at','hospital_name','status','approved_rejected_at','approved_rejected_by','tentative_visit_to']  
+
+
+
+class OPDAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OPDFormData
+        fields = ['referral_id','dependent_id','dependent_name','relation_with_employee','created_at','hospital_name','status']
+
+
+class DependentImaageSerializer(serializers.ModelSerializer):
+    id_proof_base64 = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Dependents
+        fields = ['id_proof_base64']
+
+    def get_id_proof_base64(self, obj):
+        if obj.id_proof:
+            # Convert binary image data to Base64 string
+            return base64.b64encode(obj.id_proof).decode('utf-8')
+        return None
 
 # class RoleSpecificSerializer(serializers.Serializer):
 #     # Add specific fields for roles, e.g., for Student
