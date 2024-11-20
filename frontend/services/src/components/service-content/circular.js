@@ -513,7 +513,7 @@ export default function Circular() {
     <div style={styles.container}>
       <div style={styles.formContainer}>
         <div style={styles.header}>
-          <h2 style={styles.headerText}>CIRCULAR FORM</h2>
+          <h2 style={styles.headerText}>CIRCULAR / NOTIFICATIONS / OFFICE ORDERS FORM</h2>
         </div>
         <div style={styles.form}>
           <form onSubmit={(e) => handleSubmit(e, 'Submit')}>

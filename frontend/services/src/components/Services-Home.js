@@ -22,7 +22,8 @@ import {
 import CentralAcademicBlock from "../assets/CentralAcademicBlock.jpg";
 import Centralavenue from "../assets/centralavenue.jpg";
 import Rooms from "../assets/TypicalRoom.jpg";
-import logo from "../assets/logo.png";
+import Header from "./header"
+import Footer from "./footer"
 
 export default function UniversityHomepage() {
   const navigate = useNavigate();
@@ -294,34 +295,6 @@ export default function UniversityHomepage() {
     }
   };
 
-  const { logoHeight, fontSize, flexDirection } = getResponsiveStyles();
-
-  const headerStyle = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: flexDirection,
-    margin: "auto",
-    padding: "10px",
-    width: "100%",
-    borderBottom: "#2c3e50",
-  };
-
-  const logoStyle = {
-    width: "auto",
-    height: logoHeight,
-    border: "2px solid white",
-    marginRight: flexDirection === "row" ? "20px" : "0",
-    marginBottom: "10px",
-  };
-
-  const headerTextStyle = {
-    fontWeight: "bold",
-    fontFamily: "Tahoma",
-    color: "#2c3e50",
-    textAlign: "center",
-    fontSize: fontSize,
-  };
 
   const renderSection = (
     title,
@@ -457,17 +430,7 @@ export default function UniversityHomepage() {
         backgroundColor: "white",
       }}
     >
-      <div style={headerStyle}>
-        <img src={logo} alt="Institute Logo" style={logoStyle} />
-        <div style={{ textAlign: "center" }}>
-          <h1 style={headerTextStyle}>
-            भारतीय पेट्रोलियम और ऊर्जा संस्थान, विशाखापत्तनम
-          </h1>
-          <h1 style={headerTextStyle}>
-            INDIAN INSTITUTE OF PETROLEUM & ENERGY, VISHAKAPATNAM
-          </h1>
-        </div>
-      </div>
+      <Header />
       
       <div
         style={{
@@ -765,6 +728,7 @@ export default function UniversityHomepage() {
           </button>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

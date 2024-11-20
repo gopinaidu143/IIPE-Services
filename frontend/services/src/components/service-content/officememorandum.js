@@ -1,59 +1,34 @@
-import React, { useState, useEffect, useContext } from 'react';
-import AuthContext from '../../context/AuthContext';
-import axios from 'axios';
+import React, { useState } from 'react';
 
-export default function Circular() {
+export default function MemoForm() {
   const [formData, setFormData] = useState({
-    circularType: '',
-    publishId: '',
-    date: '',
+    memoId: '',
+    memoType: '',
     issuedBy: '',
+    dateOfIssue: '',
     subject: '',
     file: null,
   });
   const [errors, setErrors] = useState({});
-  const { authTokens } = useContext(AuthContext);
-  const [issuedByOptions, setIssuedByOptions] = useState([]);
-  const [circularTypes] = useState(['Office Memorandums']);
-
-  useEffect(() => {
-    const fetchIssuedByOptions = async () => {
-      try {
-        const response = await axios.get('/api/issued-by-options', {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${authTokens}`,
-          },
-          withCredentials: true,
-        });
-        console.log('Issued By Options:', response.data); // Debugging line
-        setIssuedByOptions(response.data);
-      } catch (error) {
-        console.error('Error fetching issued by options:', error);
-      }
-    };
-    fetchIssuedByOptions();
-  }, [authTokens]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({ ...prevData, [name]: value }));
+  };
 
-    // Handle file upload
-    if (name === 'file') {
-      setFormData((prevData) => ({
-        ...prevData,
-        file: e.target.files[0],
-      }));
-    }
+  const handleFileChange = (e) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      file: e.target.files[0],
+    }));
   };
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.circularType) newErrors.circularType = 'Circular type is required';
-    if (!formData.publishId) newErrors.publishId = 'Publish ID is required';
-    if (!formData.date) newErrors.date = 'Date is required';
+    if (!formData.memoId) newErrors.memoId = 'Memo ID is required';
+    if (!formData.memoType) newErrors.memoType = 'Memo type is required';
     if (!formData.issuedBy) newErrors.issuedBy = 'Issued by is required';
+    if (!formData.dateOfIssue) newErrors.dateOfIssue = 'Date of issue is required';
     if (!formData.subject) newErrors.subject = 'Subject is required';
     if (!formData.file) newErrors.file = 'File is required';
 
@@ -61,44 +36,13 @@ export default function Circular() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e, action) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
     if (validate()) {
-      const formDataToSubmit = new FormData();
-      formDataToSubmit.append('c_type', formData.circularType);
-      formDataToSubmit.append('publish_id', formData.publishId);
-      formDataToSubmit.append('date', formData.date);
-      formDataToSubmit.append('issued_by', formData.issuedBy);
-      formDataToSubmit.append('subject', formData.subject);
-      formDataToSubmit.append('file', formData.file);
-      formDataToSubmit.append('action', action.toLowerCase());
-
-      try {
-        const response = await axios.post("/api/circular-data/", formDataToSubmit, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          withCredentials: true,
-        });
-
-        if (response.status === 201) {
-          alert(`${action} successful`);
-          setFormData({
-            circularType: '',
-            publishId: '',
-            date: '',
-            issuedBy: '',
-            subject: '',
-            file: null,
-          });
-        }
-      } catch (error) {
-        console.error('Error submitting form:', error);
-        alert('There was an error submitting the form');
-      }
+      console.log('Form submitted:', formData);
+      // Here you would typically send the data to your backend
     } else {
-      alert('Please fix the errors in the form');
+      console.log('Form has errors');
     }
   };
 
@@ -116,7 +60,7 @@ export default function Circular() {
       maxWidth: '64rem',
       backgroundColor: 'white',
       borderRadius: '0.5rem',
-      boxShadow: '0 4px 6px -1px rgba(0, 0 , 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
       overflow: 'hidden',
     },
     header: {
@@ -125,7 +69,7 @@ export default function Circular() {
       color: 'white',
     },
     headerText: {
-      fontSize: '1. 5rem',
+      fontSize: '1.5rem',
       fontWeight: 'bold',
       textAlign: 'center',
       margin: 0,
@@ -195,51 +139,38 @@ export default function Circular() {
     <div style={styles.container}>
       <div style={styles.formContainer}>
         <div style={styles.header}>
-          <h2 style={styles.headerText}>CIRCULAR FORM</h2>
+          <h2 style={styles.headerText}>MEMO FORM</h2>
         </div>
         <div style={styles.form}>
-          <form onSubmit={(e) => handleSubmit(e, 'Submit')}>
+          <form onSubmit={handleSubmit}>
             <div style={styles.gridContainer}>
               <div style={styles.inputGroup}>
-                <label htmlFor="circularType" style={styles.label}>Circular Type:</label>
+                <label htmlFor="memoId" style={styles.label}>Memo ID:</label>
+                <input
+                  id="memoId"
+                  name="memoId"
+                  value={formData.memoId}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+                {errors.memoId && <span style={styles.error}>{errors.memoId}</span>}
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label htmlFor="memoType" style={styles.label}>Memo Type:</label>
                 <select
-                  id="circularType"
-                  name="circularType"
-                  value={formData.circularType}
+                  id="memoType"
+                  name="memoType"
+                  value={formData.memoType}
                   onChange={handleChange}
                   style={styles.select}
                 >
-                  <option value="">Select Circular Type</option>
-                  {circularTypes.map((type, index) => (
-                    <option key={index} value={type}>{type}</option>
-                  ))}
+                  <option value="">Select Memo Type</option>
+                  <option value="establishment">Establishment Section</option>
+                  <option value="ltc">LTC</option>
+                  <option value="medical">Medical</option>
                 </select>
-                {errors.circularType && <span style={styles.error}>{errors.circularType}</span>}
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label htmlFor="publishId" style={styles.label}>Publish ID:</label>
-                <input
-                  id="publishId"
-                  name="publishId"
-                  value={formData.publishId}
-                  onChange={handleChange}
-                  style={styles.input}
-                />
-                {errors.publishId && <span style={styles.error}>{errors.publishId}</span>}
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label htmlFor="date" style={styles.label}>Date:</label>
-                <input
-                  id="date"
-                  type="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleChange}
-                  style={styles.input}
-                />
-                {errors.date && <span style={styles.error}>{errors.date}</span>}
+                {errors.memoType && <span style={styles.error}>{errors.memoType}</span>}
               </div>
 
               <div style={styles.inputGroup}>
@@ -252,11 +183,23 @@ export default function Circular() {
                   style={styles.select}
                 >
                   <option value="">Select Issued By</option>
-                  {issuedByOptions.map((option, index) => (
-                    <option key={index} value={option}>{option}</option>
-                  ))}
+                  <option value="dept">Department</option>
+                  <option value="ministry">Ministry</option>
                 </select>
-                {errors.issuedBy && <span style={styles .error}>{errors.issuedBy}</span>}
+                {errors.issuedBy && <span style={styles.error}>{errors.issuedBy}</span>}
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label htmlFor="dateOfIssue" style={styles.label}>Date of Issue:</label>
+                <input
+                  id="dateOfIssue"
+                  type="date"
+                  name="dateOfIssue"
+                  value={formData.dateOfIssue}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+                {errors.dateOfIssue && <span style={styles.error}>{errors.dateOfIssue}</span>}
               </div>
 
               <div style={styles.inputGroup}>
@@ -277,7 +220,7 @@ export default function Circular() {
                   id="file"
                   type="file"
                   name="file"
-                  onChange={handleChange}
+                  onChange={handleFileChange}
                   style={styles.input}
                 />
                 {errors.file && <span style={styles.error}>{errors.file}</span>}
@@ -285,11 +228,8 @@ export default function Circular() {
             </div>
 
             <div style={styles.buttonContainer}>
-              <button type="button" style={styles.button} onClick={(e) => handleSubmit(e, 'Save')}>
-                Save
-              </button>
-              <button type="button" style={styles.button} onClick={(e) => handleSubmit(e, 'Publish')}>
-                Publish
+              <button type="submit" style={styles.button}>
+                Submit
               </button>
             </div>
           </form>

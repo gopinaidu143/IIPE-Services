@@ -341,3 +341,83 @@ class OPDFormData(models.Model):
         return f"{self.employee_name} - {self.referral_id}"
 
 
+ 
+class Circulars(models.Model):
+    c_type = models.CharField(max_length=50)
+    publish_id = models.CharField(max_length=10)
+    date = models.DateField()
+    issued_department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="dept_issued")
+    subject = models.TextField()
+    view_pdf = models.BinaryField(null=True, blank=True)
+    uploaded_by = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_published = models.BooleanField(default=False)
+    unpublished = models.BooleanField(default=False)
+    access_to = models.ManyToManyField(Role, related_name="circulars")  # Many-to-many relationship
+
+    def _str_(self):
+        return f'{self.publish_id} - {self.c_type}'
+    
+class Event(models.Model):
+    event_name = models.CharField(max_length=255)
+    organizer = models.CharField(max_length=50)
+    event_id = models.CharField(max_length=10)
+    event_type = models.CharField(max_length=50)
+    from_date = models.DateField()
+    to_date = models.DateField()
+    organized_department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="dept_organized")
+    subject = models.TextField()
+    venue = models.CharField(max_length=100)
+    view_pdf = models.BinaryField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_published = models.BooleanField(default=False)
+    unpublished = models.BooleanField(default=False)
+
+
+class Memo(models.Model):
+    reference_id = models.CharField(max_length=20)
+    memo_type = models.CharField(max_length=50)
+    issued_date = models.DateField()
+    subject = models.TextField()
+    view_pdf = models.BinaryField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_published = models.BooleanField(default=False)
+    unpublished = models.BooleanField(default=False)
+
+class EmailRequisition(models.Model):
+    name = models.CharField(max_length=150)
+    program = models.CharField(max_length=150)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="user_dept")
+    person_email = models.EmailField()
+    contact_no = models.CharField(max_length=12)
+    emergency_contact = models.CharField(max_length=12)
+    hostler_dayscholar = models.CharField(max_length=20)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_resolved = models.BooleanField(default=False)
+    resolved_by = models.CharField(max_length=255)
+
+
+
+class SoftwareRequisition(models.Model):
+    name = models.CharField(max_length=150)
+    program = models.CharField(max_length=150)
+    roll_no = models.CharField(max_length=15)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="requested_dept")
+    email = models.EmailField()
+    contact_no = models.CharField(max_length=12)
+    hostler_dayscholar = models.CharField(max_length=20)
+    purpose = models.TextField()
+    remote_access = models.CharField(max_length=50)
+    choosen_os = models.CharField(max_length=50)
+    from_date = models.DateField()
+    to_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_resolved = models.BooleanField(default=False)
+    resolved_by = models.CharField(max_length=255)
+
+

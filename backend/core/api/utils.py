@@ -1,24 +1,13 @@
-from contextvars import Context
 from dateutil import parser
-from django.http import HttpResponse
-from django.utils import timezone
 from django.template.loader import render_to_string,get_template
-from xhtml2pdf import pisa
-from io import BytesIO, StringIO
 from .models import OPDFormData,Dependents,MasterData
-from rest_framework.permissions import IsAuthenticated
 from .serializers import DependentImaageSerializer
 from django.templatetags.static import static
-import pdfkit
 import pdfkit
 import tempfile
 import os
 from django.template.loader import render_to_string
-from django.http import HttpResponse
 from django.contrib import messages
-from django.shortcuts import redirect
-from django.urls import reverse
-from io import BytesIO
 from django.templatetags.static import static
 from .send_mails import opd_approved_email
 
@@ -26,6 +15,8 @@ from .send_mails import opd_approved_email
 
 def change_date(x):
     return parser.parse(x).date()
+
+
 
 
 

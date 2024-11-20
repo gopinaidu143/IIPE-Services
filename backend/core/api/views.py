@@ -5,8 +5,12 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken,TokenError
 from rest_framework_simplejwt.views import TokenRefreshView
-from .models import MasterData, Degree, Student, Faculty,Role,Employee,Alumni,ExEmployee,Department,Designation,UserAccount,Service,RoleServiceAssignment,Dependents,Hospital,OPDFormData
-from .serializers import UserRegistrationSerializer,LoginSerializer,ServiceSerializer,MasterDataSerializer, DependentSerializer, HospitalSerializer,OPDUserSerializer,OPDAdminSerializer,DependentImaageSerializer
+from .models import (MasterData, Degree, Student, Faculty,Role,Employee,Alumni,ExEmployee,Department,Designation,UserAccount,
+                     Service,RoleServiceAssignment,Dependents,Hospital,
+                     OPDFormData,Memo)
+from .serializers import (UserRegistrationSerializer,LoginSerializer,ServiceSerializer,MasterDataSerializer, DependentSerializer, HospitalSerializer,
+                          OPDUserSerializer,OPDAdminSerializer,DependentImaageSerializer,
+                          CircularSerializer,EventSerializer,MemoSerializer,EmailRequisitionSerializer,SoftwareRequisitionSerializer)
 from django.shortcuts import get_object_or_404,render
 import pyotp
 from .send_mails import send_otp_email,send_opd_email,opd_rejected_email
@@ -584,30 +588,88 @@ class RejectRecord(APIView):
 
 
 
+
+
+
+class AddCircularView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = CircularSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Circular added successfully!"}, status=status.HTTP_201_CREATED)
+        return Response({"message": "Failed to add circular", "errors": serializer.errors},status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class DepartmentOptionsView(APIView):
+    def get(self, request, *args, **kwargs):
+        try:
+            
+            departments = Department.objects.values_list('name', flat=True)            
+            
+            response_data = {                
+                "departments": list(departments)
+            }
+        
+            return Response(response_data)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+class AddEventView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = EventSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Event created successfully!"},status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+class AddMemoView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = MemoSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response( {"message": "Memo created successfully!"},status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class EmailRequisitionView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = EmailRequisitionSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Email requisition submitted successfully!"},status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class SoftwareRequisitionView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = SoftwareRequisitionSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Software requisition submitted successfully!"},status=status.HTTP_201_CREATED )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
        
-def preview_pdf(request, doc_id):
-    try:
-        # Fetch the document based on the provided referral_id (doc_id)
-        document = OPDFormData.objects.get(referral_id=doc_id)
-    except OPDFormData.DoesNotExist:
-        return HttpResponse("Document not found", status=404)
+# def preview_pdf(request, doc_id):
+#     try:
+#         # Fetch the document based on the provided referral_id (doc_id)
+#         document = OPDFormData.objects.get(referral_id=doc_id)
+#     except OPDFormData.DoesNotExist:
+#         return HttpResponse("Document not found", status=404)
 
-    # Serve the PDF as a response
-    response = HttpResponse(document.opd_form, content_type='application/pdf')
-    response['Content-Disposition'] = f'inline; filename="{doc_id}-opd-form.pdf"'  # Display inline in the browser
-    return response
-
-
-
-
-
-
-
-
-
-
-
-
+#     # Serve the PDF as a response
+#     response = HttpResponse(document.opd_form, content_type='application/pdf')
+#     response['Content-Disposition'] = f'inline; filename="{doc_id}-opd-form.pdf"'  # Display inline in the browser
+#     return response
 
 
 # def opd(request):

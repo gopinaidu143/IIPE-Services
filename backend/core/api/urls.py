@@ -3,7 +3,8 @@ from django.urls import path
 from .views import (RegisterAPIView,LoginAPIView,LogoutView,CustomTokenRefreshView,
                     ForgotPasswordView,VerifyOTPView,ResetPasswordView,FormOptionsView,
                     ServiceListView,EmployeeDataView,DependentDataView,OPDSubmissionView,
-                    UserOPDListView,AdminOPDListView,ApproveRecord,RejectRecord,preview_pdf)
+                    UserOPDListView,AdminOPDListView,ApproveRecord,RejectRecord,AddCircularView,DepartmentOptionsView,
+                    AddEventView,AddMemoView,EmailRequisitionView,SoftwareRequisitionView)
 from .utils import generate_pdf
 
 urlpatterns = [
@@ -24,8 +25,15 @@ urlpatterns = [
     path('admin-opdforms/<str:record_id>/approve/',ApproveRecord.as_view() , name='approve_record'),
     path('admin-opdforms/<str:record_id>/reject/',  RejectRecord.as_view(), name='reject_record'),
     # path('opd/',opd,name='opd'),
-    path('preview-pdf/<str:doc_id>/', preview_pdf, name='preview_pdf'),
+    # path('preview-pdf/<str:doc_id>/', preview_pdf, name='preview_pdf'),
     path('generate-pdf/<str:record_id>/', generate_pdf, name='preview_pdf'),
+    path('circulars/add/', AddCircularView.as_view(), name='circular-add'),
+    path('departments/', DepartmentOptionsView.as_view(), name='departments-data'),
+    path('event/add/', AddEventView.as_view(), name='event-add'),
+    path('memo/add/', AddMemoView.as_view(), name='memo-add'),
+    path('email-requisition/', EmailRequisitionView.as_view(), name='email-requisition'),
+    path('software-requisition/', SoftwareRequisitionView.as_view(), name='software-requisition'),
+
 
 
 

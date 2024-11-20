@@ -23,7 +23,7 @@ const Footer = () => {
         fontSize: isSmallMobile ? '10px' : '14px',
         textAlign: 'center',
         padding: isSmallMobile ? '20px' : '30px',
-        width: '96%',
+        width: '95%',
         marginTop: 'auto'
       }}>
         <div style={{
@@ -52,13 +52,14 @@ const Footer = () => {
               <h4>CONTACT DETAILS</h4>
               <p>
                 <strong>Shri. Sunny John</strong><br />
-                Hospitality Officer,<br />
+                 Officer,<br />
                 <br />
-                <FontAwesomeIcon icon={faMapMarkerAlt} /> IIPE, Vizag - 247667<br />
+                <FontAwesomeIcon icon={faMapMarkerAlt} /> IIPE, Vizag - 530003
+                <br />
                 Andhra Pradesh, India<br />
                 <br />
-                <FontAwesomeIcon icon={faPhone} /> <a href="tel:+911332285570" style={{ color: 'white', textDecoration: 'none' }}>+91-1332-285570</a><br />
-                <FontAwesomeIcon icon={faEnvelope} /> <a href="mailto:hospitality.officer@iipe.ac.in" style={{ color: 'white', textDecoration: 'none' }}>hospitality.officer@iipe.ac.in</a>
+                <FontAwesomeIcon icon={faPhone} /> <a href="Tel: +91 9908423552" style={{ color: 'white', textDecoration: 'none' }}> +91 9908423552</a><br />
+                <FontAwesomeIcon icon={faEnvelope} /> <a href="office@iipe.ac.in" style={{ color: 'white', textDecoration: 'none' }}>office@iipe.ac.in</a>
               </p>
             </div>
 
@@ -67,11 +68,11 @@ const Footer = () => {
               <h4>USEFUL LINKS</h4>
               <ul style={{ listStyleType: 'none', padding: 0 }}>
                 <li><a href="https://www.iipe.ac.in" target="_blank" rel="noopener noreferrer" style={{ color: 'white', textDecoration: 'none' }}>IIPE</a></li>
-                <li><a href="/safety" style={{ color: 'white', textDecoration: 'none' }}>Safety</a></li>
-                <li><a href="/security" style={{ color: 'white', textDecoration: 'none' }}>Security</a></li>
-                <li><a href="/feedback" style={{ color: 'white', textDecoration: 'none' }}>Feedback</a></li>
-                <li><a href="/virtual-tour" style={{ color: 'white', textDecoration: 'none' }}>Virtual Tour</a></li>
-                <li><a href="/institute-hospital" style={{ color: 'white', textDecoration: 'none' }}>Institute Hospital</a></li>
+                <li><a href="/safety" style={{ color: 'white', textDecoration: 'none' }}>OPD</a></li>
+                <li><a href="/security" style={{ color: 'white', textDecoration: 'none' }}>Circulars</a></li>
+                <li><a href="/feedback" style={{ color: 'white', textDecoration: 'none' }}>Notifications</a></li>
+                <li><a href="/virtual-tour" style={{ color: 'white', textDecoration: 'none' }}>Events</a></li>
+                <li><a href="/institute-hospital" style={{ color: 'white', textDecoration: 'none' }}>GuestHousebooking</a></li>
               </ul>
             </div>
 

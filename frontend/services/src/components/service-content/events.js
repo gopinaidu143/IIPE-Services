@@ -4,56 +4,57 @@ import axios from 'axios';
 
 export default function Event() {
   const [formData, setFormData] = useState({
-    circularType: '',
-    publishId: '',
-    date: '',
-    issuedBy: '',
+    eventName: '',
+    eventOrganizerName: '',
+    eventId: '',
+    eventType: '',
+    fromDate: '',
+    toDate: '',
+    organizedBy: '',
     subject: '',
     file: null,
   });
   const [errors, setErrors] = useState({});
   const { email, authTokens } = useContext(AuthContext);
-  const [issuedByOptions, setIssuedByOptions] = useState(['admindept','examsection']); // Example options for "Issued By"
-  const [circularTypes, setCircularTypes] = useState(['Events']); // Example circular types
+  const [organizedByOptions, setOrganizedByOptions] = useState(['admindept', 'examsection']); // Example options
+  const [eventTypes, setEventTypes] = useState(['Conference', 'Workshop', 'Seminar']); // Example event types
 
   useEffect(() => {
-    // Fetch issued by options from the API or set them manually
-    const fetchIssuedByOptions = async () => {
+    // Fetch organized by options from the API or set them manually
+    const fetchOrganizedByOptions = async () => {
       try {
-        const response = await axios.get('/api/issued-by-options', {
+        const response = await axios.get('/api/organized-by-options', {
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${authTokens}`,
           },
           withCredentials: true,
         });
-        setIssuedByOptions(response.data);
+        setOrganizedByOptions(response.data);
       } catch (error) {
-        console.error('Error fetching issued by options:', error);
+        console.error('Error fetching organized by options:', error);
       }
     };
-    fetchIssuedByOptions();
+    fetchOrganizedByOptions();
   }, [authTokens]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({ ...prevData, [name]: value }));
-
-    // Handle file upload
-    if (name === 'file') {
-      setFormData((prevData) => ({
-        ...prevData,
-        file: e.target.files[0],
-      }));
-    }
+    const { name, value, files } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: files ? files[0] : value,
+    }));
   };
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.circularType) newErrors.circularType = 'Circular type is required';
-    if (!formData.publishId) newErrors.publishId = 'Publish ID is required';
-    if (!formData.date) newErrors.date = 'Date is required';
-    if (!formData.issuedBy) newErrors.issuedBy = 'Issued by is required';
+    if (!formData.eventName) newErrors.eventName = 'Event name is required';
+    if (!formData.eventOrganizerName) newErrors.eventOrganizerName = 'Event organizer name is required';
+    if (!formData.eventId) newErrors.eventId = 'Event ID is required';
+    if (!formData.eventType) newErrors.eventType = 'Event type is required';
+    if (!formData.fromDate) newErrors.fromDate = 'From date is required';
+    if (!formData.toDate) newErrors.toDate = 'To date is required';
+    if (!formData.organizedBy) newErrors.organizedBy = 'Organized by is required';
     if (!formData.subject) newErrors.subject = 'Subject is required';
     if (!formData.file) newErrors.file = 'File is required';
 
@@ -66,15 +67,12 @@ export default function Event() {
 
     if (validate()) {
       const formDataToSubmit = new FormData();
-      formDataToSubmit.append('circularType', formData.circularType);
-      formDataToSubmit.append('publishId', formData.publishId);
-      formDataToSubmit.append('date', formData.date);
-      formDataToSubmit.append('issuedBy', formData.issuedBy);
-      formDataToSubmit.append('subject', formData.subject);
-      formDataToSubmit.append('file', formData.file);
+      Object.keys(formData).forEach(key => {
+        formDataToSubmit.append(key, formData[key]);
+      });
 
       try {
-        const response = await axios.post("/api/circular-data/", formDataToSubmit, {
+        const response = await axios.post("/api/event-data/", formDataToSubmit, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -84,10 +82,13 @@ export default function Event() {
         if (response.status === 200) {
           alert(`${action} successful`);
           setFormData({
-            circularType: '',
-            publishId: '',
-            date: '',
-            issuedBy: '',
+            eventName: '',
+            eventOrganizerName: '',
+            eventId: '',
+            eventType: '',
+            fromDate: '',
+            toDate: '',
+            organizedBy: '',
             subject: '',
             file: null,
           });
@@ -115,7 +116,7 @@ export default function Event() {
       maxWidth: '64rem',
       backgroundColor: 'white',
       borderRadius: '0.5rem',
-      boxShadow: '0 4px 6px -1px rgba(0, 0 , 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
       overflow: 'hidden',
     },
     header: {
@@ -200,96 +201,99 @@ export default function Event() {
           <form onSubmit={(e) => handleSubmit(e, 'Submit')}>
             <div style={styles.gridContainer}>
               <div style={styles.inputGroup}>
-                <label htmlFor="circularType" style={styles.label}>Event Name:</label>
-                {/* <select
-                  id="circularType"
-                  name="circularType"
-                  value={formData.circularType}
+                <label htmlFor="eventName" style={styles.label}>Event Name:</label>
+                <input
+                  id="eventName"
+                  name="eventName"
+                  value={formData.eventName}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+                {errors.eventName && <span style={styles.error}>{errors.eventName}</span>}
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label htmlFor="eventOrganizerName" style={styles.label}>Event Organizer Name:</label>
+                <input
+                  id="eventOrganizerName"
+                  name="eventOrganizerName"
+                  value={formData.eventOrganizerName}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+                {errors.eventOrganizerName && <span style={styles.error}>{errors.eventOrganizerName}</span>}
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label htmlFor="eventId" style={styles.label}>Event ID:</label>
+                <input
+                  id="eventId"
+                  name="eventId"
+                  value={formData.eventId}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+                {errors.eventId && <span style={styles.error}>{errors.eventId}</span>}
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label htmlFor="eventType" style={styles.label}>Event Type:</label>
+                <select
+                  id="eventType"
+                  name="eventType"
+                  value={formData.eventType}
                   onChange={handleChange}
                   style={styles.select}
                 >
-                  <option value="">Select Circular Type</option>
-                  {circularTypes.map((type, index) => (
+                  <option value="">Select Event Type</option>
+                  {eventTypes.map((type, index) => (
                     <option key={index} value={type}>{type}</option>
                   ))}
                 </select>
-                {errors.circularType && <span style={styles.error}>{errors.circularType}</span>} */}
-                <input
-                  id="subject"
-                  name="subject"
-                  value={formData.subject}
-                  onChange={handleChange}
-                  style={styles.input}
-                />
-                {errors.subject && <span style={styles.error}>{errors.subject}</span>}
+                {errors.eventType && <span style={styles.error}>{errors.eventType}</span>}
               </div>
 
               <div style={styles.inputGroup}>
-                <label htmlFor="publishId" style={styles.label}>Publish ID:</label>
+                <label htmlFor="fromDate" style={styles.label}>From Date:</label>
                 <input
-                  id="publishId"
-                  name="publishId"
-                  value={formData.publishId}
-                  onChange={handleChange}
-                  style={styles.input}
-                />
-                {errors.publishId && <span style={styles.error}>{errors.publishId}</span>}
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label htmlFor="date" style={styles.label}>Date From:</label>
-                <input
-                  id="date"
+                  id="fromDate"
                   type="date"
-                  name="date"
-                  value={formData.date}
+                  name="fromDate"
+                  value={formData.fromDate}
                   onChange={handleChange}
                   style={styles.input}
                 />
-                {errors.date && <span style={styles.error}>{errors.date}</span>}
-              </div>
-              <div style={styles.inputGroup}>
-                <label htmlFor="date" style={styles.label}>Date To:</label>
-                <input
-                  id="date"
-                  type="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleChange}
-                  style={styles.input}
-                />
-                {errors.date && <span style={styles.error}>{errors.date}</span>}
+                {errors.fromDate && <span style={styles.error}>{errors.fromDate}</span>}
               </div>
 
               <div style={styles.inputGroup}>
-                <label htmlFor="issuedBy" style={styles.label}>Contucting By:</label>
+                <label htmlFor="toDate" style={styles.label}>To Date:</label>
+                <input
+                  id="toDate"
+                  type="date"
+                  name="toDate"
+                  value={formData.toDate}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+                {errors.toDate && <span style={styles.error}>{errors.toDate}</span>}
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label htmlFor="organizedBy" style={styles.label}>Organized By:</label>
                 <select
-                  id="issuedBy"
-                  name="issuedBy"
-                  value ={formData.issuedBy}
+                  id="organizedBy"
+                  name="organizedBy"
+                  value={formData.organizedBy}
                   onChange={handleChange}
                   style={styles.select}
                 >
-                  <option value="">Select Issued By</option>
-                  {issuedByOptions.map((option, index) => (
+                  <option value="">Select Organized By</option>
+                  {organizedByOptions.map((option, index) => (
                     <option key={index} value={option}>{option}</option>
                   ))}
                 </select>
-
-                
-                {errors.issuedBy && <span style={styles.error}>{errors.issuedBy}</span>}
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label htmlFor="subject" style={styles.label}>Event type:</label>
-                <input
-                  id="subject"
-                  name="subject"
-                  value={formData.subject}
-                  onChange={handleChange}
-                  style={styles.input}
-                />
-                {errors.subject && <span style={styles.error}>{errors.subject}</span>}
+                {errors.organizedBy && <span style={styles.error}>{errors.organizedBy}</span>}
               </div>
 
               <div style={styles.inputGroup}>

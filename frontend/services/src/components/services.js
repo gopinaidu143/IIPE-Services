@@ -1,8 +1,14 @@
 import React, { useState, useEffect, useContext, useCallback } from "react";
 import AuthContext from "../context/AuthContext";
 import OPD from "./service-content/OPD";
-import AdminPage from "./service-content/adminopd";
-import SoftwareRequisitionForm from "./service-content/softwarereqform";
+import Home from "./service-content/Home";
+import Memorandums from "./service-content/officememorandum";
+import CircularForm from "./service-content/temp";
+import EventForm from "./service-content/temp2";
+import MemoForm from "./service-content/temp3";
+import EmailRequisitionForm from "./service-content/temp4";
+import SoftwareRequisitionForm from "./service-content/temp5";
+// import SoftwareRequisitionForm from "./service-content/softwarereqform";
 import Emailrequisition from "./service-content/std_email_reqform";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -28,8 +34,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios"; 
 import logo from "../assets/logo.png";
 import Circular from "./service-content/circular";
-import Event from  "./service-content/events";
-import UserOPD from "./service-content/useropd";
+import Event from  "./service-content/events"
 
 const styles = {
   container: {
@@ -43,7 +48,7 @@ const styles = {
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 1000,
+    zIndex: 50,
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
@@ -102,14 +107,11 @@ const styles = {
   sidebar: {
     backgroundColor: "#f1f5f9",
     transition: "all 0.3s ease-in-out",
+    overflowY: "auto",
+    height: "calc(100vh - 4rem)",
     position: "fixed",
     left: 0,
     top: "4rem",
-    width: "16rem",
-    height: "calc(100vh - 4rem)",
-    boxShadow: "2px 0 5px rgba(0,0,0,0.1)",
-    zIndex: 500,
-    overflowY: "auto",
   },
   sidebarHeader: {
     position: "sticky",
@@ -124,6 +126,7 @@ const styles = {
   sidebarTitle: {
     fontSize: "1.7rem",
     fontWeight: "bold",
+    transition: "opacity 0.3s",
     marginTop: "50px",
   },
   servicesList: {
@@ -147,8 +150,12 @@ const styles = {
     cursor: "pointer",
   },
   serviceButtonSelected: {
-    backgroundColor: "#e2e8f0", // Light gray background for selected service
-    color: "#2c3e50", // Dark text color for selected service
+    backgroundColor: "#e2e8f0",
+    color: "#2c3e50",
+  },
+  serviceButtonHover: {
+    backgroundColor: "#d1d5db",
+    color: "#2c3e50",
   },
   serviceIcon: {
     marginRight: "0.75rem",
@@ -164,29 +171,26 @@ const styles = {
     flexGrow: 1,
     padding: "2rem",
     overflowY: "auto",
-    transition: "margin-left 0.3s ease-in-out",
+    transition: "all 0.3s ease-in-out",
   },
-  mobileMenuButton: {
-    display: "block",
+  hamburgerMenu: {
     background: "none",
     border: "none",
     color: "white",
     fontSize: "1.5rem",
     cursor: "pointer",
-  },
-  sidebarHidden: {
-    transform: "translateX(-100%)",
+    marginRight: "1rem",
   },
 };
 
 export default function Services() {
-  const { logoutUser , isAuthenticated, user, role } = useContext(AuthContext);
+  const { logoutUser, isAuthenticated, user, role } = useContext(AuthContext);
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [services, setServices] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [currentService, setCurrentService] = useState();
   const [serviceContent, setServiceContent] = useState(null);
@@ -202,10 +206,7 @@ export default function Services() {
           icon: getIconByName(service.service_name),
         }))
       );
-      if (response.data.length > 0) {
-        setSelectedService(response.data[0].slug);
-        setCurrentService(response.data[0].service_name);
-      }
+     
     } catch (error) {
       console.error("Error fetching services:", error);
     } finally {
@@ -221,9 +222,7 @@ export default function Services() {
     const handleResize = () => {
       const mobile = window.innerWidth <= 768;
       setIsMobile(mobile);
-      if (mobile) {
-        setIsSidebarOpen(false);
-      } else {
+      if (!mobile) {
         setIsSidebarOpen(true);
       }
     };
@@ -234,31 +233,48 @@ export default function Services() {
   }, []);
 
   useEffect(() => {
+    console.log("Current service changed:", currentService);
     if (currentService === "OPD Form") {
-      setServiceContent(<UserOPD />);
-    } else if (currentService === "Circulars") {
+      setServiceContent(<OPD />);
+    }
+    else if (currentService === "Circulars"){
       setServiceContent(<Circular />);
-    } else if (currentService === "Notifications") {
-      setServiceContent(<AdminPage />);
-    } else if (currentService === "Events") {
+    } 
+    else if (currentService === "Notifications"){
+      setServiceContent(<CircularForm  />);//this is dummy circular
+    } 
+    else if (currentService === "Events"){
       setServiceContent(<Event />);
-    } else if (currentService === "Software Requisition") {
+    } 
+    else if (currentService === "Software Requisition"){
+      // setServiceContent(<SoftwareRequisitionForm />);
       setServiceContent(<SoftwareRequisitionForm />);
-    } else if (currentService === "Email Requisition") {
-      setServiceContent(<Emailrequisition />);
-    } else if (currentService === "Guesthouse Booking") {
-      navigate("/GuestHousebooking");
-    } else {
+    } 
+    else if (currentService === "Email Requisition"){
+      // setServiceContent(<Emailrequisition />);
+      setServiceContent(<EmailRequisitionForm />);
+    } 
+    else if (currentService === "Guesthouse Booking"){
+      // navigate("/GuestHousebooking");
+      setServiceContent(<EventForm />);
+    } 
+    else if (currentService === "Office Memorandums"){
+      // setServiceContent(<Memorandums />);
+      setServiceContent(<MemoForm/>);
+    } 
+    else {
       setServiceContent(<>{currentService}</>);
     }
-  }, [currentService]);
+  }, [currentService, navigate]);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const handleServiceClick = (slug) => {
+  const handleServiceClick = (slug, serviceName) => {
+    console.log("Service clicked:", slug, serviceName);
     setSelectedService(slug);
+    setCurrentService(serviceName);
     if (isMobile) {
       setIsSidebarOpen(false);
     }
@@ -266,7 +282,8 @@ export default function Services() {
 
   const sidebarStyle = {
     ...styles.sidebar,
-    ...(isSidebarOpen ? {} : styles.sidebarHidden),
+    width: isSidebarOpen ? "16rem" : "0",
+    transform: isSidebarOpen ? "translateX(0)" : "translateX(-100%)",
   };
 
   const mainAreaStyle = {
@@ -274,15 +291,20 @@ export default function Services() {
     marginLeft: isMobile ? "0" : isSidebarOpen ? "16rem" : "0",
   };
 
+  const hamburgerMenuStyle = {
+    ...styles.hamburgerMenu,
+    display: "block", 
+  };
+
   const handleLogout = () => {
-    logoutUser ();
+    logoutUser();
     navigate('/login');
   };
 
   const getIconByName = (name) => {
     switch (name) {
       case "OPD Form":
- return faClipboard;
+        return faClipboard;
       case "Webmail Password Change":
         return faKey;
       case "Circulars":
@@ -313,7 +335,7 @@ export default function Services() {
       <nav style={styles.navbar}>
         <div style={{ display: "flex", alignItems: "center" }}>
           <button
-            style={styles.mobileMenuButton}
+            style={hamburgerMenuStyle}
             onClick={toggleSidebar}
           >
             <FontAwesomeIcon icon={isSidebarOpen ? faTimes : faBars} />
@@ -357,14 +379,21 @@ export default function Services() {
         <aside style={sidebarStyle}>
           <div style={styles.sidebarHeader}>
             <h2 style={styles.sidebarTitle}>Services</h2>
+            {isMobile && (
+              <button
+                style={styles.hamburgerMenu}
+                onClick={toggleSidebar}
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            )}
           </div>
           <ul style={styles.servicesList}>
             {services.map((service) => (
               <li key={service.slug} style={styles.serviceItem}>
                 <button
                   onClick={() => {
-                    handleServiceClick(service.slug);
-                    setCurrentService(service.service_name);
+                    handleServiceClick(service.slug, service.service_name);
                   }}
                   style={{
                     ...styles.serviceButton,
@@ -384,11 +413,13 @@ export default function Services() {
         <main style={mainAreaStyle}>
           {loading ? (
             <p>Loading...</p>
-          ) : (
+          ) : currentService ? (
             <>
-              <p>Selected Service: {selectedService}</p>
+              <p>Selected Service: {currentService}</p>
               <div>{serviceContent}</div>
             </>
+          ) : (
+            <p>Welcome to the Services Dashboard. Please select a service from the sidebar.</p>
           )}
         </main>
       </div>
