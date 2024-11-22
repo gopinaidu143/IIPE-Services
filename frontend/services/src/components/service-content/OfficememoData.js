@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import EventForm from './EventForm';
-import EventList from './EventList';
+import OfficeMemoForm from './OfficememoForm';
+import OfficeMemoList from './OfficememoList';
 
-const EventData = () => {
+const OfficeMemoData = () => {
   const [activeView, setActiveView] = useState(null);
 
   const styles = {
@@ -45,7 +45,7 @@ const EventData = () => {
             ...(activeView === 'form' ? styles.activeButton : styles.inactiveButton),
           }}
         >
-          Fill Form
+          Create New Memo
         </button>
         <button
           onClick={() => setActiveView('list')}
@@ -54,15 +54,15 @@ const EventData = () => {
             ...(activeView === 'list' ? styles.activeButton : styles.inactiveButton),
           }}
         >
-          Show Records
+          View Memos
         </button>
       </div>
 
-      {activeView === 'form' && <EventForm />}
-      {activeView === 'list' && <EventList />}
+      {activeView === 'form' && <OfficeMemoForm />}
+      {activeView === 'list' && <OfficeMemoList />}
     </div>
   );
 };
 
-export default EventData;
+export default OfficeMemoData;
 

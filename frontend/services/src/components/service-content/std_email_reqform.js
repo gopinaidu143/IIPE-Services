@@ -1,78 +1,106 @@
-import React, { useState, useEffect, useContext } from 'react';
-import AuthContext from '../../context/AuthContext';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
-export default function Emailrequisition() {
+export default function EmailRequisitionForm() {
+  const [errors, setErrors] = useState({});
+  const [departments, setDepartments] = useState([]);
   const [formData, setFormData] = useState({
-    date: '',
-    program: '',
-    rollNo: '',
-    branch: '',
-    personalEmail: '',
-    emergencyContactNo: '',
-    hostler: false,
+    name: "",
+    program: "",
+    department: "",
+    person_email: "",
+    contact_no: "",
+    emergency_contact: "",
+    hostler_dayscholar: "",
     termsAccepted: false,
   });
-  const [errors, setErrors] = useState({});
-  const { email, authTokens } = useContext(AuthContext);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    axios
+      .get("/api/departments/")
+      .then((response) => {
+        setDepartments(response.data.departments);
+      })
+      .catch((error) => {
+        console.error("Error fetching departments:", error);
+      });
+  }, []);
 
   const handleChange = (e) => {
-    const { name, type, checked, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    const { name, value, type, checked } = e.target;
+    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
+    // Clear the error when the user starts typing
+    setErrors({ ...errors, [name]: '' });
   };
 
-  const validate = () => {
-    const newErrors = {};
-    if (!formData.date) newErrors.date = 'Date is required';
-    if (!formData.program) newErrors.program = 'Program/Course is required';
-    if (!formData.rollNo) newErrors.rollNo = 'Roll No is required';
-    if (!formData.branch) newErrors.branch = 'Branch is required';
-    if (!formData.personalEmail) newErrors.personalEmail = 'Personal Email ID is required';
-    if (!formData.emergencyContactNo) newErrors.emergencyContactNo = 'Emergency Contact No is required';
-    if (!formData.termsAccepted) newErrors.termsAccepted = 'You must accept the terms and conditions';
-
-    if (formData.emergencyContactNo && !/^\d{10}$/.test(formData.emergencyContactNo)) {
-      newErrors.emergencyContactNo = 'Emergency contact number must be 10 digits';
+  const validateForm = () => {
+    let formErrors = {};
+    
+    if (!formData.name.trim()) {
+      formErrors.name = "Name is required";
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (!formData.program.trim()) {
+      formErrors.program = "Program is required";
+    }
+
+    if (!formData.department) {
+      formErrors.department = "Department is required";
+    }
+
+    if (!formData.person_email.trim()) {
+      formErrors.person_email = "Personal email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.person_email)) {
+      formErrors.person_email = "Email is invalid";
+    }
+
+    if (!formData.contact_no.trim()) {
+      formErrors.contact_no = "Contact number is required";
+    } else if (!/^\d{10}$/.test(formData.contact_no)) {
+      formErrors.contact_no = "Contact number should be 10 digits";
+    }
+
+    if (!formData.emergency_contact.trim()) {
+      formErrors.emergency_contact = "Emergency contact is required";
+    } else if (!/^\d{10}$/.test(formData.emergency_contact)) {
+      formErrors.emergency_contact = "Emergency contact should be 10 digits";
+    }
+
+    if (!formData.hostler_dayscholar) {
+      formErrors.hostler_dayscholar = "Please select Hostler or Dayscholar";
+    }
+
+    if (!formData.termsAccepted) {
+      formErrors.termsAccepted = "You must accept the terms and conditions";
+    }
+
+    setErrors(formErrors);
+    return Object.keys(formErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    
-    if (validate()) {
-      console.log(formData); // You can send this data to the server
-      
-      try {
-        const response = await axios.post("/api/submit-opd/", formData, {
-          withCredentials: true,
-        });
-        
-        if (response.status === 200) {
-          alert('Form submitted successfully');
-          // Reset the form
+    if (validateForm()) {
+      axios
+        .post("/api/email-requisition/", formData)
+        .then((response) => {
+          setMessage("Email requisition submitted successfully!");
           setFormData({
-            date: '',
-            program: '',
-            rollNo: '',
-            branch: '',
-            personalEmail: '',
-            emergencyContactNo: '',
-            hostler: false,
+            name: "",
+            program: "",
+            department: "",
+            person_email: "",
+            contact_no: "",
+            emergency_contact: "",
+            hostler_dayscholar: "",
             termsAccepted: false,
           });
-        }
-      } catch (error) {
-        console.error('Error submitting form:', error);
-        alert('There was an error submitting the form');
-      }
-    } else {
-      alert('Please fix the errors in the form');
+        })
+        .catch((error) => {
+          setMessage("Failed to submit email requisition.");
+          console.error("Error submitting form:", error);
+        });
     }
   };
 
@@ -124,11 +152,11 @@ export default function Emailrequisition() {
     },
     input: {
       display: 'block',
-      width: '96%',
+      width: '100%',
       padding: '0.5rem',
       fontSize: '1rem',
       borderRadius: '0.375rem',
-      border: '1px solid #d1d 5db',
+      border: '1px solid #d1d5db',
       boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
     },
     select: {
@@ -140,11 +168,6 @@ export default function Emailrequisition() {
       border: '1px solid #d1d5db',
       boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
       backgroundColor: 'white',
-    },
-    error: {
-      color: '#ef4444',
-      fontSize: '0.75rem',
-      marginTop: '0.25rem',
     },
     buttonContainer: {
       display: 'flex',
@@ -162,6 +185,14 @@ export default function Emailrequisition() {
       cursor: 'pointer',
       transition: 'background-color 0.2s',
     },
+    message: {
+      textAlign: 'center',
+      marginBottom: '1rem',
+      padding: '0.5rem',
+      borderRadius: '0.375rem',
+      backgroundColor: '#e0f2f1',
+      color: '#00695c',
+    },
     termsContainer: {
       marginTop: '1rem',
       padding: '0.5rem',
@@ -169,33 +200,39 @@ export default function Emailrequisition() {
       borderRadius: '0.375rem',
       backgroundColor: '#f9fafb',
     },
+    error: {
+      color: 'red',
+      fontSize: '0.875rem',
+      marginTop: '0.25rem',
+    },
   };
 
   return (
     <div style={styles.container}>
       <div style={styles.formContainer}>
         <div style={styles.header}>
-          <h2 style={styles.headerText}>Email Requisition Form</h2>
+          <h2 style={styles.headerText}>EMAIL REQUISITION FORM</h2>
         </div>
         <div style={styles.form}>
+          {message && <div style={styles.message}>{message}</div>}
           <form onSubmit={handleSubmit}>
             <div style={styles.gridContainer}>
               <div style={styles.inputGroup}>
-                <label htmlFor="date" style={styles.label}>Date:</label>
+                <label htmlFor="name" style={styles.label}>Name:</label>
                 <input
-                  id="date"
-                  type="date"
-                  name="date"
-                  value={formData.date}
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
                   onChange={handleChange}
                   style={styles.input}
                 />
-                {errors.date && <span style={styles.error}>{errors.date}</span>}
+                {errors.name && <span style={styles.error}>{errors.name}</span>}
               </div>
-
               <div style={styles.inputGroup}>
-                <label htmlFor="program" style={styles.label}>Program/Course:</label>
+                <label htmlFor="program" style={styles.label}>Program:</label>
                 <input
+                  type="text"
                   id="program"
                   name="program"
                   value={formData.program}
@@ -204,71 +241,76 @@ export default function Emailrequisition() {
                 />
                 {errors.program && <span style={styles.error}>{errors.program}</span>}
               </div>
-
               <div style={styles.inputGroup}>
-                <label htmlFor="rollNo" style={styles.label}>Roll No:</label>
-                <input
-                  id="rollNo"
-                  name="rollNo"
-                  value={formData.rollNo}
-                  onChange={handleChange}
-                  style={styles.input}
-                />
-                {errors.rollNo && <span style={styles.error}>{errors.rollNo}</span>}
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label htmlFor="branch" style={styles.label}>Branch:</label>
-                <input
-                  id="branch"
-                  name="branch"
-                  value={formData.branch}
-                  onChange={handleChange}
-                  style={styles.input}
-                />
-                {errors.branch && <span style={styles.error}>{errors.branch}</span>}
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label htmlFor="personalEmail" style={styles.label}>Personal Email ID:</label>
-                <input
-                  id="personalEmail"
-                  name="personalEmail"
-                  type="email"
-                  value={formData.personalEmail}
-                  onChange={handleChange}
-                  style={styles.input}
-                />
-                {errors.personalEmail && <span style={styles.error}>{errors.personalEmail}</span>}
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label htmlFor="emergencyContactNo" style={styles.label}>Emergency Contact No:</label>
-                <input
-                  id="emergencyContactNo"
-                  name="emergencyContactNo"
-                  value={formData.emergencyContactNo}
-                  onChange={handleChange}
-                  style={styles.input}
-                />
-                {errors.emergencyContactNo && <span style={styles.error}>{errors.emergencyContactNo}</span>}
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label htmlFor="hostler" style={styles.label}>Hostler/Day Scholar:</label>
+                <label htmlFor="department" style={styles.label}>Department:</label>
                 <select
-                  id="hostler"
-                  name="hostler"
-                  value={formData.hostler ? 'Hostler' : 'Day Scholar'}
+                  id="department"
+                  name="department"
+                  value={formData.department}
                   onChange={handleChange}
                   style={styles.select}
                 >
-                  <option value="Hostler">Hostler</option>
-                  <option value="Day Scholar">Day Scholar</option>
+                  <option value="">Select a department</option>
+                  {departments.map((dept, index) => (
+                    <option key={index} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
                 </select>
+                {errors.department && <span style={styles.error}>{errors.department}</span>}
+              </div>
+              <div style={styles.inputGroup}>
+                <label htmlFor="person_email" style={styles.label}>Personal Email:</label>
+                <input
+                  type="email"
+                  id="person_email"
+                  name="person_email"
+                  value={formData.person_email}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+                {errors.person_email && <span style={styles.error}>{errors.person_email}</span>}
+              </div>
+              <div style={styles.inputGroup}>
+                <label htmlFor="contact_no" style={styles.label}>Contact Number:</label>
+                <input
+                  type="text"
+                  id="contact_no"
+                  name="contact_no"
+                  value={formData.contact_no}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+                {errors.contact_no && <span style={styles.error}>{errors.contact_no}</span>}
+              </div>
+              <div style={styles.inputGroup}>
+                <label htmlFor="emergency_contact" style={styles.label}>Emergency Contact:</label>
+                <input
+                  type="text"
+                  id="emergency_contact"
+                  name="emergency_contact"
+                  value={formData.emergency_contact}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+                {errors.emergency_contact && <span style={styles.error}>{errors.emergency_contact}</span>}
+              </div>
+              <div style={styles.inputGroup}>
+                <label htmlFor="hostler_dayscholar" style={styles.label}>Hostler/Dayscholar:</label>
+                <select
+                  id="hostler_dayscholar"
+                  name="hostler_dayscholar"
+                  value={formData.hostler_dayscholar}
+                  onChange={handleChange}
+                  style={styles.select}
+                >
+                  <option value="">Select an option</option>
+                  <option value="Hostler">Hostler</option>
+                  <option value="Dayscholar">Dayscholar</option>
+                </select>
+                {errors.hostler_dayscholar && <span style={styles.error}>{errors.hostler_dayscholar}</span>}
               </div>
             </div>
-
             <div style={styles.termsContainer}>
               <label style={styles.label}>
                 <input
@@ -281,11 +323,8 @@ export default function Emailrequisition() {
               </label>
               {errors.termsAccepted && <span style={styles.error}>{errors.termsAccepted}</span>}
             </div>
-
             <div style={styles.buttonContainer}>
-              <button type="submit" style={styles.button}>
-                Submit
-              </button>
+              <button type="submit" style={styles.button}>Submit</button>
             </div>
           </form>
         </div>

@@ -75,6 +75,10 @@ class ServiceSerializer(serializers.ModelSerializer):
         model = Service
         fields = ['service_name', 'description']
 
+class RoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Role
+        fields = ["role_name"] 
 
 
 class MasterDataSerializer(serializers.ModelSerializer):
@@ -136,7 +140,7 @@ class CircularSerializer(serializers.ModelSerializer):
         child=serializers.CharField(), 
         write_only=True
     )
-    view_pdf = serializers.FileField(write_only=True) 
+    view_pdf = serializers.FileField(required=False, write_only=True)  # Optional during updates
     issued_by = serializers.CharField(write_only=True)
     date = serializers.DateField(input_formats=["%Y-%m-%d", "%d-%m-%Y"], write_only=True)
 
@@ -150,28 +154,61 @@ class CircularSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         role_names = validated_data.pop('access_to', [])
-        
-        print(role_names)
         roles = Role.objects.filter(role_name__in=role_names)
         issued_department = validated_data.pop('issued_by', None)
+
         if not roles.exists():
             raise serializers.ValidationError({"access_to": "One or more roles do not exist."})
+
         if issued_department:
             issued_department = Department.objects.filter(name=issued_department).first()
             if not issued_department:
-                raise serializers.ValidationError({"issued_by": f"Department does not exist."})
+                raise serializers.ValidationError({"issued_by": "Department does not exist."})
 
         pdf_file = validated_data.pop("view_pdf", None)
-        pdf_binary = pdf_file.read() if pdf_file else None  # Convert file to binary
+        pdf_binary = pdf_file.read() if pdf_file else None
 
-        # Create the Circulars instance
         circular = Circulars.objects.create(
             issued_department=issued_department,
             view_pdf=pdf_binary,
             **validated_data
         )
-        circular.access_to.set(roles)  # Set the many-to-many relationship
+        circular.access_to.set(roles)
         return circular
+
+    def update(self, instance, validated_data):
+        role_names = validated_data.pop('access_to', [])
+        roles = Role.objects.filter(role_name__in=role_names)
+
+        if not roles.exists():
+            raise serializers.ValidationError({"access_to": "One or more roles do not exist."})
+
+        issued_department = validated_data.pop('issued_by', None)
+        if issued_department:
+            issued_department = Department.objects.filter(name=issued_department).first()
+            if not issued_department:
+                raise serializers.ValidationError({"issued_by": "Department does not exist."})
+            instance.issued_department = issued_department
+
+        pdf_file = validated_data.pop("view_pdf", None)
+        if pdf_file:  # Update only if a new PDF is provided
+            instance.view_pdf = pdf_file.read()
+        
+        if "is_published" in validated_data:
+            new_is_published = validated_data['is_published']
+            if instance.is_published != new_is_published:
+                instance.is_published = new_is_published
+                instance.unpublished = not new_is_published
+
+        # Update other fields
+        for attr, value in validated_data.items():
+            if attr != "is_published":  # Avoid redundant update since it's handled above
+                setattr(instance, attr, value)
+
+        instance.access_to.set(roles)
+        instance.save()
+        return instance
+
     
 
 class EventSerializer(serializers.ModelSerializer):
@@ -208,6 +245,30 @@ class EventSerializer(serializers.ModelSerializer):
         )
 
         return event
+    def update(self, instance, validated_data):
+        organized_department = validated_data.pop('organized_department', None)
+        if organized_department:
+            organized_department = Department.objects.filter(name=organized_department).first()
+            if not organized_department:
+                raise serializers.ValidationError({"issued_by": "Department does not exist."})
+            instance.organized_department = organized_department
+
+        pdf_file = validated_data.pop("view_pdf", None)
+        if pdf_file:  # Update only if a new PDF is provided
+            instance.view_pdf = pdf_file.read()
+        
+        if "is_published" in validated_data:
+            new_is_published = validated_data['is_published']
+            if instance.is_published != new_is_published:
+                instance.is_published = new_is_published
+                instance.unpublished = not new_is_published
+
+        # Update other fields
+        for attr, value in validated_data.items():
+            if attr != "is_published":  # Avoid redundant update since it's handled above
+                setattr(instance, attr, value)
+        instance.save()
+        return instance
     
 
 
@@ -219,7 +280,7 @@ class MemoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Memo
         fields = [
-            "reference_id", "memo_type", "issued_date", "subject", 
+            "reference_id", "memo_type", "issued_date", 'issued_by',"subject", 
             "view_pdf", "is_published"
         ]
 
@@ -235,6 +296,29 @@ class MemoSerializer(serializers.ModelSerializer):
         )
 
         return memo
+    
+    def update(self, instance, validated_data):       
+    # Handle PDF file update
+        pdf_file = validated_data.pop("view_pdf", None)
+        if pdf_file:  # Update only if a new PDF is provided
+            instance.view_pdf = pdf_file.read()
+        
+        # Check and update is_published and unpublished states
+        if "is_published" in validated_data:
+            new_is_published = validated_data['is_published']
+            if instance.is_published != new_is_published:
+                instance.is_published = new_is_published
+                instance.unpublished = not new_is_published  # Ensure alternative state
+
+        # Update other fields
+        for attr, value in validated_data.items():
+            if attr != "is_published":  # Avoid redundant update since it's handled above
+                setattr(instance, attr, value)
+        
+        instance.save()
+        return instance
+    
+
     
 class EmailRequisitionSerializer(serializers.ModelSerializer):
     department = serializers.CharField(write_only=True)  # Accept department name as input
@@ -264,6 +348,7 @@ class EmailRequisitionSerializer(serializers.ModelSerializer):
 
 
 
+
 class SoftwareRequisitionSerializer(serializers.ModelSerializer):
     department = serializers.CharField(write_only=True)  # Accept department name as input
     from_date = serializers.DateField(input_formats=["%Y-%m-%d", "%d-%m-%Y"], write_only=True)
@@ -271,7 +356,7 @@ class SoftwareRequisitionSerializer(serializers.ModelSerializer):
     class Meta:
         model = SoftwareRequisition
         fields = [
-            "name", "program", "roll_no", "department", "email", 
+            "name", "program", "roll_no", "department","required_software" ,"email", 
             "contact_no", "hostler_dayscholar", "purpose", 
             "remote_access", "choosen_os", "from_date", "to_date"
         ]
@@ -285,6 +370,79 @@ class SoftwareRequisitionSerializer(serializers.ModelSerializer):
         
         # Create the SoftwareRequisition instance
         return SoftwareRequisition.objects.create(department=department, **validated_data)
+    
+
+ # Include fields from the Role model that you want to expose
+
+class CircularListSerializer(serializers.ModelSerializer):
+    issued_by = serializers.CharField(source="issued_department.name", read_only=True)
+    access_to = RoleSerializer(many=True, read_only=True)  # Serialize ManyToManyField
+
+    class Meta:
+        model = Circulars
+        fields = [
+            "id", "c_type", "publish_id", "date", "issued_by", "subject",'uploaded_by',
+            "is_published", "unpublished", "created_at", "updated_at", "access_to"
+        ]
+
+class EventListSerializer(serializers.ModelSerializer):
+    organized_department = serializers.CharField(source="organized_department.name", read_only=True)
+
+    class Meta:
+        model = Event
+        fields = [
+            "id","event_name", "organizer", "event_id", "event_type", "from_date",
+            "to_date", "organized_department", "subject", "venue",
+            "is_published", "created_at", "updated_at"
+        ]
+class MemoListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Memo
+        fields = [
+            "id", "reference_id", "memo_type", "issued_date", 'issued_by',"subject", 
+            "is_published"
+        ]
+
+class EmailListSerializer(serializers.ModelSerializer):
+    department = serializers.CharField(source="department.name", read_only=True)
+
+    class Meta:
+        model = EmailRequisition
+        fields = [
+            "id", "name", "program", "department", "person_email", 
+            "contact_no", "emergency_contact", "hostler_dayscholar","is_resolved"
+        ]
+
+class SoftwareListSerializer(serializers.ModelSerializer):
+    department = serializers.CharField(source="department.name", read_only=True)
+
+    class Meta:
+        model = SoftwareRequisition
+        fields = [
+           "id","name", "program", "roll_no", "department","required_software" ,"email", 
+            "contact_no", "hostler_dayscholar", "purpose", 
+            "remote_access", "choosen_os", "from_date", "to_date"
+        ]
+
+class AllCircularListSerializer(serializers.ModelSerializer):
+    issued_by = serializers.CharField(source="issued_department.name", read_only=True)
+    class Meta:
+        model = Circulars
+        fields = [
+            "id", "c_type", "publish_id", "date", "issued_by", "subject",
+        ]
+
+class AllEventListSerializer(serializers.ModelSerializer):
+    organized_department = serializers.CharField(source="organized_department.name", read_only=True)
+
+    class Meta:
+        model = Event
+        fields = [
+            "id","event_name", "organizer", "event_id", "event_type", "from_date",
+            "to_date", "organized_department", "subject", "venue"
+        ]
+
+
 
 # class RoleSpecificSerializer(serializers.Serializer):
 #     # Add specific fields for roles, e.g., for Student

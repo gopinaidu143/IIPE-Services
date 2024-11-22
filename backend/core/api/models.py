@@ -344,7 +344,7 @@ class OPDFormData(models.Model):
  
 class Circulars(models.Model):
     c_type = models.CharField(max_length=50)
-    publish_id = models.CharField(max_length=10)
+    publish_id = models.CharField(max_length=10,unique=True)
     date = models.DateField()
     issued_department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="dept_issued")
     subject = models.TextField()
@@ -356,13 +356,13 @@ class Circulars(models.Model):
     unpublished = models.BooleanField(default=False)
     access_to = models.ManyToManyField(Role, related_name="circulars")  # Many-to-many relationship
 
-    def _str_(self):
+    def __str__(self):
         return f'{self.publish_id} - {self.c_type}'
     
 class Event(models.Model):
     event_name = models.CharField(max_length=255)
     organizer = models.CharField(max_length=50)
-    event_id = models.CharField(max_length=10)
+    event_id = models.CharField(max_length=10,unique=True)
     event_type = models.CharField(max_length=50)
     from_date = models.DateField()
     to_date = models.DateField()
@@ -377,8 +377,9 @@ class Event(models.Model):
 
 
 class Memo(models.Model):
-    reference_id = models.CharField(max_length=20)
+    reference_id = models.CharField(max_length=20,unique=True)
     memo_type = models.CharField(max_length=50)
+    issued_by = models.CharField(max_length=255)
     issued_date = models.DateField()
     subject = models.TextField()
     view_pdf = models.BinaryField(null=True, blank=True)
@@ -407,6 +408,7 @@ class SoftwareRequisition(models.Model):
     program = models.CharField(max_length=150)
     roll_no = models.CharField(max_length=15)
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="requested_dept")
+    required_software = models.TextField()
     email = models.EmailField()
     contact_no = models.CharField(max_length=12)
     hostler_dayscholar = models.CharField(max_length=20)

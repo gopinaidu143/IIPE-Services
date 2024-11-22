@@ -1,22 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-export default function MemoForm() {
+export default function EventForm() {
   const [formData, setFormData] = useState({
-    reference_id: "",
-    memo_type: "",
-    issued_by: "",
-    issued_date: "",
+    event_name: "",
+    organizer: "",
+    event_id: "",
+    event_type: "",
+    from_date: "",
+    to_date: "",
+    organized_department: "",
     subject: "",
+    venue: "",
     is_published: false,
     view_pdf: null,
   });
 
+  const [departments, setDepartments] = useState([]);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
 
-  const memoTypes = ["Establishment", "LTC", "Medical"];
-  const issuedByOptions = ["Ministry", "Department"];
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const response = await axios.get("/api/departments/");
+        setDepartments(response.data.departments);
+      } catch (error) {
+        console.error("Error fetching departments:", error);
+      }
+    };
+
+    fetchDepartments();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
@@ -33,12 +48,21 @@ export default function MemoForm() {
   const validateForm = () => {
     let formErrors = {};
     
-    if (!formData.reference_id.trim()) formErrors.reference_id = "Reference ID is required";
-    if (!formData.memo_type) formErrors.memo_type = "Memo Type is required";
-    if (!formData.issued_by) formErrors.issued_by = "Issued By is required";
-    if (!formData.issued_date) formErrors.issued_date = "Issued Date is required";
+    if (!formData.event_name.trim()) formErrors.event_name = "Event Name is required";
+    if (!formData.organizer.trim()) formErrors.organizer = "Organizer is required";
+    if (!formData.event_id.trim()) formErrors.event_id = "Event ID is required";
+    if (!formData.event_type.trim()) formErrors.event_type = "Event Type is required";
+    if (!formData.from_date) formErrors.from_date = "From Date is required";
+    if (!formData.to_date) formErrors.to_date = "To Date is required";
+    if (!formData.organized_department) formErrors.organized_department = "Organized Department is required";
     if (!formData.subject.trim()) formErrors.subject = "Subject is required";
+    if (!formData.venue.trim()) formErrors.venue = "Venue is required";
     if (!formData.view_pdf) formErrors.view_pdf = "PDF file is required";
+
+    // Check if To Date is after From Date
+    if (formData.from_date && formData.to_date && new Date(formData.to_date) < new Date(formData.from_date)) {
+      formErrors.to_date = "To Date must be after From Date";
+    }
 
     setErrors(formErrors);
     return Object.keys(formErrors).length === 0;
@@ -53,26 +77,30 @@ export default function MemoForm() {
       });
 
       try {
-        const response = await axios.post("/api/memos/add/", data, {
+        const response = await axios.post("/api/events/add/", data, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        console.log("Memo created successfully:", response.data);
-        setMessage("Memo created successfully!");
+        console.log("Event created successfully:", response.data);
+        setMessage("Event created successfully!");
         // Reset the form
         setFormData({
-          reference_id: "",
-          memo_type: "",
-          issued_by: "",
-          issued_date: "",
+          event_name: "",
+          organizer: "",
+          event_id: "",
+          event_type: "",
+          from_date: "",
+          to_date: "",
+          organized_department: "",
           subject: "",
+          venue: "",
           is_published: false,
           view_pdf: null,
         });
         // Clear any existing errors
         setErrors({});
       } catch (error) {
-        console.error("Error creating memo:", error.response.data);
-        setMessage("Error creating memo. Please try again.");
+        console.error("Error creating event:", error.response.data);
+        setMessage("Error creating event. Please try again.");
       }
     }
   };
@@ -197,67 +225,101 @@ export default function MemoForm() {
     <div style={styles.container}>
       <div style={styles.formContainer}>
         <div style={styles.header}>
-          <h2 style={styles.headerText}>MEMO FORM</h2>
+          <h2 style={styles.headerText}>EVENT FORM</h2>
         </div>
         <div style={styles.form}>
           {message && <div style={styles.message}>{message}</div>}
           <form onSubmit={handleSubmit}>
             <div style={styles.gridContainer}>
               <div style={styles.inputGroup}>
-                <label htmlFor="reference_id" style={styles.label}>Reference ID:</label>
+                <label htmlFor="event_name" style={styles.label}>Event Name:</label>
                 <input
                   type="text"
-                  id="reference_id"
-                  name="reference_id"
-                  value={formData.reference_id}
+                  id="event_name"
+                  name="event_name"
+                  value={formData.event_name}
                   onChange={handleChange}
                   style={styles.input}
                 />
-                {errors.reference_id && <span style={styles.error}>{errors.reference_id}</span>}
+                {errors.event_name && <span style={styles.error}>{errors.event_name}</span>}
               </div>
               <div style={styles.inputGroup}>
-                <label htmlFor="memo_type" style={styles.label}>Memo Type:</label>
-                <select
-                  id="memo_type"
-                  name="memo_type"
-                  value={formData.memo_type}
+                <label htmlFor="organizer" style={styles.label}>Organizer:</label>
+                <input
+                  type="text"
+                  id="organizer"
+                  name="organizer"
+                  value={formData.organizer}
                   onChange={handleChange}
-                  style={styles.select}
-                >
-                  <option value="">Select Memo Type</option>
-                  {memoTypes.map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-                {errors.memo_type && <span style={styles.error}>{errors.memo_type}</span>}
+                  style={styles.input}
+                />
+                {errors.organizer && <span style={styles.error}>{errors.organizer}</span>}
               </div>
               <div style={styles.inputGroup}>
-                <label htmlFor="issued_by" style={styles.label}>Issued By:</label>
-                <select
-                  id="issued_by"
-                  name="issued_by"
-                  value={formData.issued_by}
+                <label htmlFor="event_id" style={styles.label}>Event ID:</label>
+                <input
+                  type="text"
+                  id="event_id"
+                  name="event_id"
+                  value={formData.event_id}
                   onChange={handleChange}
-                  style={styles.select}
-                >
-                  <option value="">Select Issuer</option>
-                  {issuedByOptions.map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-                {errors.issued_by && <span style={styles.error}>{errors.issued_by}</span>}
+                  style={styles.input}
+                />
+                {errors.event_id && <span style={styles.error}>{errors.event_id}</span>}
               </div>
               <div style={styles.inputGroup}>
-                <label htmlFor="issued_date" style={styles.label}>Issued Date:</label>
+                <label htmlFor="event_type" style={styles.label}>Event Type:</label>
+                <input
+                  type="text"
+                  id="event_type"
+                  name="event_type"
+                  value={formData.event_type}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+                {errors.event_type && <span style={styles.error}>{errors.event_type}</span>}
+              </div>
+              <div style={styles.inputGroup}>
+                <label htmlFor="from_date" style={styles.label}>From Date:</label>
                 <input
                   type="date"
-                  id="issued_date"
-                  name="issued_date"
-                  value={formData.issued_date}
+                  id="from_date"
+                  name="from_date"
+                  value={formData.from_date}
                   onChange={handleChange}
                   style={styles.input}
                 />
-                {errors.issued_date && <span style={styles.error}>{errors.issued_date}</span>}
+                {errors.from_date && <span style={styles.error}>{errors.from_date}</span>}
+              </div>
+              <div style={styles.inputGroup}>
+                <label htmlFor="to_date" style={styles.label}>To Date:</label>
+                <input
+                  type="date"
+                  id="to_date"
+                  name="to_date"
+                  value={formData.to_date}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+                {errors.to_date && <span style={styles.error}>{errors.to_date}</span>}
+              </div>
+              <div style={styles.inputGroup}>
+                <label htmlFor="organized_department" style={styles.label}>Organized Department:</label>
+                <select
+                  id="organized_department"
+                  name="organized_department"
+                  value={formData.organized_department}
+                  onChange={handleChange}
+                  style={styles.select}
+                >
+                  <option value="">Select Department</option>
+                  {departments.map((dept, index) => (
+                    <option key={index} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+                {errors.organized_department && <span style={styles.error}>{errors.organized_department}</span>}
               </div>
               <div style={styles.inputGroup}>
                 <label htmlFor="subject" style={styles.label}>Subject:</label>
@@ -271,15 +333,16 @@ export default function MemoForm() {
                 {errors.subject && <span style={styles.error}>{errors.subject}</span>}
               </div>
               <div style={styles.inputGroup}>
-                <label htmlFor="view_pdf" style={styles.label}>Upload PDF:</label>
+                <label htmlFor="venue" style={styles.label}>Venue:</label>
                 <input
-                  type="file"
-                  id="view_pdf"
-                  name="view_pdf"
+                  type="text"
+                  id="venue"
+                  name="venue"
+                  value={formData.venue}
                   onChange={handleChange}
                   style={styles.input}
                 />
-                {errors.view_pdf && <span style={styles.error}>{errors.view_pdf}</span>}
+                {errors.venue && <span style={styles.error}>{errors.venue}</span>}
               </div>
               <div style={styles.inputGroup}>
                 <label style={styles.checkboxLabel}>
@@ -293,9 +356,20 @@ export default function MemoForm() {
                   Is Published
                 </label>
               </div>
+              <div style={styles.inputGroup}>
+                <label htmlFor="view_pdf" style={styles.label}>Upload PDF:</label>
+                <input
+                  type="file"
+                  id="view_pdf"
+                  name="view_pdf"
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+                {errors.view_pdf && <span style={styles.error}>{errors.view_pdf}</span>}
+              </div>
             </div>
             <div style={styles.buttonContainer}>
-              <button type="submit" style={styles.button}>Create Memo</button>
+              <button type="submit" style={styles.button}>Create Event</button>
             </div>
           </form>
         </div>

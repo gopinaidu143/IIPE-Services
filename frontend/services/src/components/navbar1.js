@@ -154,7 +154,7 @@ const Navbar1 = () => {
       ],
     },
     { name: "Placements", path: "/placements" },
-    { name: "Resources", path: "/services" },
+    { name: "Services", path: "/services" },
     {
       name: isAuthenticated ? user : "Login",
       dropdownItems: isAuthenticated

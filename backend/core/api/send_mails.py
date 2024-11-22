@@ -74,6 +74,55 @@ def opd_rejected_email(to_email, referral_id):
     except Exception as e:
         print(f"Failed to send email: {e}")
 
-       
+
+
+def send_email_requisition_email(email, message):
+    try:
+        subject = "Your Email Requisition Response"
+        full_message = f"""
+        Dear User,
+
+        {message}
+
+        Thank you for your patience. If you have any further questions, feel free to reach out.
+
+        Best regards,
+        Support Team
+        """
+        send_mail(
+            subject,
+            full_message,
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            fail_silently=False,
+        )
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+def send_software_requisition_email(email, message):
+    try:
+        subject = "Your Software Requisition Response"
+        full_message = f"""
+        Dear User,
+
+        {message}
+
+        Thank you for your patience. If you have any further questions, feel free to reach out.
+
+        Best regards,
+        Support Team
+        """
+        send_mail(
+            subject,
+            full_message,
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            fail_silently=False,
+        )
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+        
 
         

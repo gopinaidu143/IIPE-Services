@@ -83,15 +83,19 @@ import GuestHousePageC from './pages/GuestC';
 import About from './components/about';
 import ServicesPage from './components/services';
 import DependentForm from './pages/dependentreg';
-import OPD from './components/service-content/OPD';
+// import OPD from './components/service-content/OPD';
 import RegistrationForm from './pages/Register';
 import Dining from './components/Dining';
 import { AuthProvider } from "./context/AuthContext";
 import AdminPage from './components/service-content/adminopd';
-import UserOPD from './components/service-content/useropd';
+// import UserOPD from './components/service-content/useropd';
 import ServicesHome from './components/Services-Home';
 import Home from './components/service-content/Home';
 import ForgotPassword from './components/Forgot';
+import AdminEmailView from './components/service-content/Adminmailview';
+import AdminSoftwareView from './components/service-content/Adminsoftwareview';
+import AllCircularView from './components/service-content/Allciecularview';
+import AllEventView from './components/service-content/Alleventview';
 
 function App() {
   const currentYear = new Date().getFullYear();
@@ -113,13 +117,16 @@ function App() {
               <Route path="/admin" element={<AdmLogin />} />
               <Route path="/user" element={<User  />} />
               <Route path="/login" element={<Loginpage />} />
+              <Route path="/circulars" element={<AllCircularView />} />
+              <Route path="/events" element={<AllEventView />} />
               <Route path="/GuestHousebooking" element={<Home/>}/>
               <Route path="/guesthouses/a" element={<GuestHousePage/>}/>
               <Route path="/guesthouses/b" element={<GuestHousePageB/>}/>
               <Route path="/guesthouses/c" element={<GuestHousePageC/>}/>
-              <Route path="/about" element={<OPD/>}/>
+              <Route path="/about" element={<AdminEmailView/>}/>
               <Route path="/GuestHousebooking/about" element={<About/>}/>
-              <Route path="/academics" element={<DependentForm/>}/>
+              {/* <Route path="/academics" element={<DependentForm/>}/> */}
+              <Route path="/academics" element={<AdminSoftwareView/>}/>
               <Route path="/placements" element={<AdminPage/>}/>
               {/* <Route path="/people" element={<People/>}/> */}
               {/* <Route path="/OPD" element={<OPD/>}/> */}

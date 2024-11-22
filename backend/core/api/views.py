@@ -7,21 +7,22 @@ from rest_framework_simplejwt.tokens import RefreshToken,TokenError
 from rest_framework_simplejwt.views import TokenRefreshView
 from .models import (MasterData, Degree, Student, Faculty,Role,Employee,Alumni,ExEmployee,Department,Designation,UserAccount,
                      Service,RoleServiceAssignment,Dependents,Hospital,
-                     OPDFormData,Memo)
+                     OPDFormData,Memo,Circulars,Event,EmailRequisition,SoftwareRequisition)
 from .serializers import (UserRegistrationSerializer,LoginSerializer,ServiceSerializer,MasterDataSerializer, DependentSerializer, HospitalSerializer,
                           OPDUserSerializer,OPDAdminSerializer,DependentImaageSerializer,
-                          CircularSerializer,EventSerializer,MemoSerializer,EmailRequisitionSerializer,SoftwareRequisitionSerializer)
+                          CircularSerializer,EventSerializer,MemoSerializer,EmailRequisitionSerializer,SoftwareRequisitionSerializer,
+                          CircularListSerializer,EventListSerializer,MemoListSerializer,EmailListSerializer,SoftwareListSerializer,AllCircularListSerializer,AllEventListSerializer)
 from django.shortcuts import get_object_or_404,render
 import pyotp
-from .send_mails import send_otp_email,send_opd_email,opd_rejected_email
+from .send_mails import send_otp_email,send_opd_email,opd_rejected_email,send_email_requisition_email,send_software_requisition_email
 from django.utils import timezone
 from datetime import datetime, timedelta
 from dateutil import parser
 from .utils import change_date,generate_pdf
 import uuid
 import threading
-
 from django.http import HttpResponse
+from django.db.models import Count
 
 
 
@@ -254,7 +255,19 @@ class LoginAPIView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+class DepartmentOptionsView(APIView):
+    def get(self, request, *args, **kwargs):
+        try:
+            
+            departments = Department.objects.values_list('name', flat=True)            
+            
+            response_data = {                
+                "departments": list(departments)
+            }
+        
+            return Response(response_data)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
@@ -592,51 +605,221 @@ class RejectRecord(APIView):
 
 
 class AddCircularView(APIView):
-    def post(self, request, *args, **kwargs):
-        serializer = CircularSerializer(data=request.data)
+    def post(self, request, pk=None, *args, **kwargs):
+        if pk:  # If a primary key is provided, handle update
+            try:
+                circular = Circulars.objects.get(pk=pk)
+            except Circulars.DoesNotExist:
+                return Response({"message": "Circular not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            serializer = CircularSerializer(circular, data=request.data, partial=True)
+        else:  # Handle creation
+            serializer = CircularSerializer(data=request.data)
+
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "Circular added successfully!"}, status=status.HTTP_201_CREATED)
-        return Response({"message": "Failed to add circular", "errors": serializer.errors},status=status.HTTP_400_BAD_REQUEST)
+            message = "Circular updated successfully!" if pk else "Circular added successfully!"
+            return Response({"message": message}, status=status.HTTP_201_CREATED)
 
+        return Response({"message": "Failed to process circular", "errors": serializer.errors},status=status.HTTP_400_BAD_REQUEST)
+    
+    # def get(self, request, pk):
+    #     try:
+    #         circular = Circulars.objects.get(pk=pk)
+    #         serializer = CircularSerializer(circular)
+    #         return Response(serializer.data, status=status.HTTP_200_OK)
+    #     except Circulars.DoesNotExist:
+    #         return Response({"error": "Circular not found"}, status=status.HTTP_404_NOT_FOUND)
 
-
-class DepartmentOptionsView(APIView):
+class CircularListView(APIView):
     def get(self, request, *args, **kwargs):
+        circulars = Circulars.objects.all().order_by("-created_at")[:]
+        serializer = CircularListSerializer(circulars, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class PublishCircularView(APIView):
+    def post(self, request, pk, *args, **kwargs):
         try:
+            circular = Circulars.objects.get(pk=pk)
+            if circular.is_published:
+                return Response({"message": "Circular is already published."}, status=status.HTTP_400_BAD_REQUEST)
             
-            departments = Department.objects.values_list('name', flat=True)            
-            
-            response_data = {                
-                "departments": list(departments)
-            }
+            circular.is_published = True
+            circular.unpublished = False
+            circular.save()
+            return Response({"message": "Circular published successfully!"}, status=status.HTTP_200_OK)
+        except Circulars.DoesNotExist:
+            return Response({"message": "Circular not found."}, status=status.HTTP_404_NOT_FOUND)
         
-            return Response(response_data)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class UnpublishCircularView(APIView):
+    def post(self, request, pk, *args, **kwargs):
+        try:
+            circular = Circulars.objects.get(pk=pk)
+            if not circular.is_published:
+                return Response({"message": "Circular is already unpublished."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            circular.is_published = False
+            circular.unpublished = True
+            circular.save()
+            return Response({"message": "Circular unpublished successfully!"}, status=status.HTTP_200_OK)
+        except Circulars.DoesNotExist:
+            return Response({"message": "Circular not found."}, status=status.HTTP_404_NOT_FOUND)
 
+def preview_circular_pdf(request, pk, *args, **kwargs):
+    try:
+        # Fetch the circular based on the provided primary key
+        circular = Circulars.objects.get(pk=pk)
+        # Ensure that the file exists
+        if not circular.view_pdf:
+            return HttpResponse("PDF not available for this circular", status=404)
+    except Circulars.DoesNotExist:
+        return HttpResponse("Circular not found", status=404)
 
-
-
+    # Serve the PDF as a response
+    response = HttpResponse(circular.view_pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{pk}-circular.pdf"'  # Display inline in the browser
+    return response       
+        
 class AddEventView(APIView):
-    def post(self, request, *args, **kwargs):
-        serializer = EventSerializer(data=request.data)
+    def post(self, request,pk=None, *args, **kwargs):
+        if pk:
+            try:
+                event = Event.objects.get(pk=pk)
+            except:
+                return Response({'message':'Event not found'},status=status.HTTP_404_NOT_FOUND)
+            serializer = EventSerializer(event,data=request.data,partial=True)
+        else:
+            serializer = EventSerializer(data=request.data)
+
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "Event created successfully!"},status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    # def get(self, request, pk):
+    #     try:
+    #         event = Event.objects.get(pk=pk)
+    #         serializer = EventSerializer(event)
+    #         return Response(serializer.data, status=status.HTTP_200_OK)
+    #     except Event.DoesNotExist:
+    #         return Response({"error": "Event not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+class EventListView(APIView):
+    def get(self, request, *args, **kwargs):
+        events = Event.objects.all().order_by("-created_at")[:]
+        serializer = EventListSerializer(events, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
+class PublishEventView(APIView):
+    def post(self, request, pk, *args, **kwargs):
+        try:
+            event = Event.objects.get(pk=pk)
+            if event.is_published:
+                return Response({"message": "event is already published."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            event.is_published = True
+            event.unpublished = False
+            event.save()
+            return Response({"message": "event published successfully!"}, status=status.HTTP_200_OK)
+        except Event.DoesNotExist:
+            return Response({"message": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+class UnpublishEventView(APIView):
+    def post(self, request, pk, *args, **kwargs):
+        try:
+            event = Event.objects.get(pk=pk)
+            if not event.is_published:
+                return Response({"message": "Event is already unpublished."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            event.is_published = False
+            event.unpublished = True
+            event.save()
+            return Response({"message": "Event unpublished successfully!"}, status=status.HTTP_200_OK)
+        except Event.DoesNotExist:
+            return Response({"message": "Event not found."}, status=status.HTTP_404_NOT_FOUND)   
+
+def preview_event_pdf(request, pk, *args, **kwargs):
+    try:
+        event = Event.objects.get(pk=pk)
+        # Ensure that the file exists
+        if not event.view_pdf:
+            return HttpResponse("PDF not available for this event", status=404)
+    except Event.DoesNotExist:
+        return HttpResponse("event not found", status=404)
+
+    # Serve the PDF as a response
+    response = HttpResponse(event.view_pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{pk}-event.pdf"'  # Display inline in the browser
+    return response
 
 
 
 class AddMemoView(APIView):
-    def post(self, request, *args, **kwargs):
-        serializer = MemoSerializer(data=request.data)
+    def post(self, request,pk=None, *args, **kwargs):
+        if pk:
+            try:
+                memo = Memo.objects.get(pk=pk)
+            except:
+                return Response({'message':'Memo not found'},status=status.HTTP_404_NOT_FOUND)
+            serializer = MemoSerializer(memo,data=request.data,partial=True)
+        else:
+            serializer = MemoSerializer(data=request.data)
+
         if serializer.is_valid():
             serializer.save()
-            return Response( {"message": "Memo created successfully!"},status=status.HTTP_201_CREATED)
+            return Response({"message": "Memo created successfully!"},status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class MemoListView(APIView):
+    def get(self, request, *args, **kwargs):
+        memos = Memo.objects.all().order_by("-created_at")[:]
+        serializer = MemoListSerializer(memos, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
 
+class PublishMemoView(APIView):
+    def post(self, request, pk, *args, **kwargs):
+        try:
+            memo = Memo.objects.get(pk=pk)
+            if memo.is_published:
+                return Response({"message": "memo is already published."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            memo.is_published = True
+            memo.unpublished = False
+            memo.save()
+            return Response({"message": "memo published successfully!"}, status=status.HTTP_200_OK)
+        except Memo.DoesNotExist:
+            return Response({"message": "memo not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+class UnpublishMemoView(APIView):
+    def post(self, request, pk, *args, **kwargs):
+        try:
+            memo = Memo.objects.get(pk=pk)
+            if not memo.is_published:
+                return Response({"message": "Memo is already unpublished."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            memo.is_published = False
+            memo.unpublished = True
+            memo.save()
+            return Response({"message": "Memo unpublished successfully!"}, status=status.HTTP_200_OK)
+        except Memo.DoesNotExist:
+            return Response({"message": "Memo not found."}, status=status.HTTP_404_NOT_FOUND)   
+
+def preview_memo_pdf(request, pk, *args, **kwargs):
+    try:
+        memo = Memo.objects.get(pk=pk)
+        # Ensure that the file exists
+        if not memo.view_pdf:
+            return HttpResponse("PDF not available for this event", status=404)
+    except Event.DoesNotExist:
+        return HttpResponse("event not found", status=404)
+
+    # Serve the PDF as a response
+    response = HttpResponse(memo.view_pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{pk}-memo.pdf"'  # Display inline in the browser
+    return response
+    
+   
 class EmailRequisitionView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = EmailRequisitionSerializer(data=request.data)
@@ -646,6 +829,43 @@ class EmailRequisitionView(APIView):
                 {"message": "Email requisition submitted successfully!"},status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class EmailRequisitionListView(APIView):
+    def get(self, request, *args, **kwargs):
+        request_emails = EmailRequisition.objects.all().order_by("-created_at")[:]
+        serializer = EmailListSerializer(request_emails, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class ResolveEmailRequisition(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request, pk, *args, **kwargs):
+        try:
+            # print(request.user.username)
+            email = EmailRequisition.objects.get(pk=pk)
+            if email.is_resolved:
+                return Response({"message": "request is already resolved."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            email.is_resolved = True
+            email.resolved_by = request.user.username
+            email.save()
+            return Response({"message": "request resovelved successfully!"}, status=status.HTTP_200_OK)
+        except EmailRequisition.DoesNotExist:
+            return Response({"message": "request not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class EmailRequisitionResponse(APIView):
+    def post(self, request, pk, *args, **kwargs):
+        try:
+            
+            message_body = request.data.get("message", None)
+            if not message_body:
+                return Response({"error": "Message content is required."}, status=status.HTTP_400_BAD_REQUEST)
+            email = EmailRequisition.objects.get(pk=pk)
+            personal_mail = email.person_email
+            send_email_requisition_email(personal_mail, message_body)
+
+            return Response({"message": "Response sent successfully!"}, status=status.HTTP_200_OK)
+        except EmailRequisition.DoesNotExist:
+            return Response({"message": "User Request not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
 class SoftwareRequisitionView(APIView):
@@ -657,19 +877,177 @@ class SoftwareRequisitionView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class SoftwareRequisitionListView(APIView):
+    def get(self, request, *args, **kwargs):
+        request_software = SoftwareRequisition.objects.all().order_by("-created_at")[:]
+        serializer = SoftwareListSerializer(request_software, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ResolveSoftwareRequisition(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request, pk, *args, **kwargs):
+        try:
+            # print(request.user.username)
+            software_request = SoftwareRequisition.objects.get(pk=pk)
+            if software_request.is_resolved:
+                return Response({"message": "request is already resolved."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            software_request.is_resolved = True
+            software_request.resolved_by = request.user.username
+            software_request.save()
+            return Response({"message": "request resovelved successfully!"}, status=status.HTTP_200_OK)
+        except SoftwareRequisition.DoesNotExist:
+            return Response({"message": "request not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class SoftwareRequisitionResponse(APIView):
+    def post(self, request, pk, *args, **kwargs):
+        try:
+            
+            message_body = request.data.get("message", None)
+            if not message_body:
+                return Response({"error": "Message content is required."}, status=status.HTTP_400_BAD_REQUEST)
+            email_request = SoftwareRequisition.objects.get(pk=pk)
+            personal_mail = email_request.email
+            send_software_requisition_email(personal_mail, message_body)
+
+            return Response({"message": "Response sent successfully!"}, status=status.HTTP_200_OK)
+        except EmailRequisition.DoesNotExist:
+            return Response({"message": "User Request not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+
 
        
-# def preview_pdf(request, doc_id):
-#     try:
-#         # Fetch the document based on the provided referral_id (doc_id)
-#         document = OPDFormData.objects.get(referral_id=doc_id)
-#     except OPDFormData.DoesNotExist:
-#         return HttpResponse("Document not found", status=404)
+def preview_pdf(request, doc_id):
+    try:
+        # Fetch the document based on the provided referral_id (doc_id)
+        document = OPDFormData.objects.get(referral_id=doc_id)
+    except OPDFormData.DoesNotExist:
+        return HttpResponse("Document not found", status=404)
 
-#     # Serve the PDF as a response
-#     response = HttpResponse(document.opd_form, content_type='application/pdf')
-#     response['Content-Disposition'] = f'inline; filename="{doc_id}-opd-form.pdf"'  # Display inline in the browser
-#     return response
+    # Serve the PDF as a response
+    response = HttpResponse(document.opd_form, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{doc_id}-opd-form.pdf"'  # Display inline in the browser
+    return response
+
+
+
+
+
+class TopCircularsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            if request.user.is_authenticated:
+                # Fetch the user's single role
+                user_role = request.user.role
+                print('I am authenticated; my role:', user_role)
+                
+                # Fetch circulars assigned to the user's role and are published
+                circulars = Circulars.objects.filter(
+                    access_to=user_role,  # Match the single role
+                    is_published=True
+                ).distinct().order_by('-created_at')[:10]
+            else:
+                # For anonymous users, fetch circulars assigned to all roles and are published
+                all_roles_count = Role.objects.count()
+                circulars = Circulars.objects.annotate(
+                    role_count=Count('access_to')
+                ).filter(
+                    role_count=all_roles_count,
+                    is_published=True
+                ).distinct().order_by('-created_at')[:10]
+
+            # Serialize the circular data
+            circulars_data = [
+                {
+                    "date": circular.date,
+                    "subject": circular.subject,
+                }
+                for circular in circulars
+            ]
+
+            return Response({"circulars": circulars_data}, status=200)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+class TopEventsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            events = Event.objects.filter(is_published=True).order_by('-created_at')[:10]
+
+            # Serialize the circular data
+            events_data = [
+                {
+                    "event":event.event_name,
+                    "from_date": event.from_date,
+                    "to_date": event.to_date,
+                    "subject": event.subject,
+                }
+                for event in events
+            ]
+
+            return Response({"events": events_data}, status=200)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+
+class AllCircularsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            if request.user.is_authenticated:
+                # Fetch the user's single role
+                user_role = request.user.role
+                print('I am authenticated; my role:', user_role)
+                
+                # Fetch circulars assigned to the user's role and are published
+                circulars = Circulars.objects.filter(
+                    access_to=user_role,  # Match the single role
+                    is_published=True
+                ).distinct().order_by('-created_at')[:]
+            else:
+                # For anonymous users, fetch circulars assigned to all roles and are published
+                all_roles_count = Role.objects.count()
+                circulars = Circulars.objects.annotate(
+                    role_count=Count('access_to')
+                ).filter(
+                    role_count=all_roles_count,
+                    is_published=True
+                ).distinct().order_by('-created_at')[:]
+
+            # Serialize the circular data
+            serializer = AllCircularListSerializer(circulars,many=True)
+
+            return Response(serializer.data, status=200)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+class AllEventsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            events = Event.objects.filter(is_published=True).order_by('-created_at')[:]
+
+            # Serialize the circular data
+            serializer = AllEventListSerializer(events,many=True)
+
+
+            return Response(serializer.data, status=200)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+
+
+
+
 
 
 # def opd(request):

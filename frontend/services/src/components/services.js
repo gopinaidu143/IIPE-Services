@@ -2,12 +2,19 @@ import React, { useState, useEffect, useContext, useCallback } from "react";
 import AuthContext from "../context/AuthContext";
 import OPD from "./service-content/OPD";
 import Home from "./service-content/Home";
-import Memorandums from "./service-content/officememorandum";
-import CircularForm from "./service-content/temp";
-import EventForm from "./service-content/temp2";
-import MemoForm from "./service-content/temp3";
-import EmailRequisitionForm from "./service-content/temp4";
+import MemoForm from "./service-content/OfficememoForm";
+import MemoList from "./service-content/OfficememoList";
+import OfficeMemoData from "./service-content/OfficememoData";
+import CircularForm from "./service-content/CircularList";
+// import EventForm from "./service-content/temp2";
+// import MemoForm from "./service-content/temp3";
+// import EmailRequisitionForm from "./service-content/temp4";
 import SoftwareRequisitionForm from "./service-content/temp5";
+import CircularData from "./service-content/CircularForm";
+import CircularManagement from "./service-content/CircularData";
+import EventList from "./service-content/EventList";
+import EventForm from "./service-content/EventForm";
+import EventData from "./service-content/EventData";
 // import SoftwareRequisitionForm from "./service-content/softwarereqform";
 import Emailrequisition from "./service-content/std_email_reqform";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -34,7 +41,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios"; 
 import logo from "../assets/logo.png";
 import Circular from "./service-content/circular";
-import Event from  "./service-content/events"
+import Event from  "./service-content/EventForm"
 
 const styles = {
   container: {
@@ -238,30 +245,35 @@ export default function Services() {
       setServiceContent(<OPD />);
     }
     else if (currentService === "Circulars"){
-      setServiceContent(<Circular />);
+      setServiceContent(<CircularManagement />);
     } 
     else if (currentService === "Notifications"){
-      setServiceContent(<CircularForm  />);//this is dummy circular
+      setServiceContent(<CircularForm />);//this is dummy circular
     } 
+    // else if (currentService === "Notifications") {
+    //   setServiceContent(<CircularList onEdit={handleEditCircular} />); // Pass the handler
+    // }
     else if (currentService === "Events"){
-      setServiceContent(<Event />);
+      setServiceContent(<EventData/>);
     } 
     else if (currentService === "Software Requisition"){
       // setServiceContent(<SoftwareRequisitionForm />);
       setServiceContent(<SoftwareRequisitionForm />);
     } 
     else if (currentService === "Email Requisition"){
-      // setServiceContent(<Emailrequisition />);
-      setServiceContent(<EmailRequisitionForm />);
+      setServiceContent(<Emailrequisition />);
     } 
     else if (currentService === "Guesthouse Booking"){
       // navigate("/GuestHousebooking");
-      setServiceContent(<EventForm />);
+      setServiceContent(<MemoForm />);
     } 
     else if (currentService === "Office Memorandums"){
       // setServiceContent(<Memorandums />);
-      setServiceContent(<MemoForm/>);
+      setServiceContent(<OfficeMemoData/>);
     } 
+    else if (currentService === "IT Services"){
+      setServiceContent(<CircularData/>);   
+     } 
     else {
       setServiceContent(<>{currentService}</>);
     }
@@ -275,10 +287,12 @@ export default function Services() {
     console.log("Service clicked:", slug, serviceName);
     setSelectedService(slug);
     setCurrentService(serviceName);
+    
     if (isMobile) {
       setIsSidebarOpen(false);
     }
   };
+ 
 
   const sidebarStyle = {
     ...styles.sidebar,
