@@ -13,6 +13,8 @@ export const AuthProvider = ({ children }) => {
     let [user, setUser] = useState(()=> sessionStorage.getItem('access_token') ? jwtDecode(sessionStorage.getItem('access_token')).username : null)
     let [role, setRole] = useState(()=> sessionStorage.getItem('access_token') ? jwtDecode(sessionStorage.getItem('access_token')).role : null)
     let [email, setMail] = useState(()=> sessionStorage.getItem('access_token') ? jwtDecode(sessionStorage.getItem('access_token')).email : null)
+    let [designation, setDesignation] = useState(()=> sessionStorage.getItem('access_token') ? jwtDecode(sessionStorage.getItem('access_token')).designation : null)
+
     // let [loading, setLoading] = useState(true)
 
     const navigate = useNavigate();
@@ -35,13 +37,13 @@ export const AuthProvider = ({ children }) => {
             setAuthTokens(access);
             setUser(decodeData['username']);
             setRole(decodeData['role']);
-           
+            setDesignation(decodeData['designation']);
             setMail(decodeData['email']);
             setIsAuthenticated(true);
             alert(message);
             // console.log(jwtDecode(sessionStorage.getItem('access_token')).username)
             // console.log(user,role,email,authTokens);
-
+            // console.log(decodeData['designation']);
             navigate('/'); // Redirect to home page or another protected route
         } catch (error) {
             console.error("Login failed", error);
@@ -161,10 +163,12 @@ export const AuthProvider = ({ children }) => {
         user:user,
         role:role,
         email:email,
+        designation:designation,
         authTokens:authTokens,
         isAuthenticated:isAuthenticated,
         loginUser:loginUser,
         logoutUser:logoutUser,
+
         
     };
 

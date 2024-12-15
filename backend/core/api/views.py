@@ -23,6 +23,8 @@ import uuid
 import threading
 from django.http import HttpResponse
 from django.db.models import Count
+from django.db.models import Q
+
 
 
 
@@ -233,14 +235,19 @@ class LoginAPIView(APIView):
             refresh['username'] = user.username
             refresh['role'] = user.role.role_name
             refresh['email'] = user.email
+            if user.role.role_name == 'Employee':
+                try:
+                    employee = Employee.objects.get(user=user)
+                    refresh['designation'] = employee.designation.name  # Assuming Designation has a 'name' field
+                except Employee.DoesNotExist:
+                    refresh['designation'] = None
             response =  Response({
                 # 'refresh': str(refresh),
                 'access': str(refresh.access_token),
                 'user': {
                     'email': user.email,
                     'username': user.username,
-                    'role': user.role.role_name,
-                    
+                    'role': user.role.role_name                   
                 },
                 "message": "Login successful."
             }, status=status.HTTP_200_OK)
@@ -251,6 +258,7 @@ class LoginAPIView(APIView):
                 # secure=True,
                 # samesite='Lax'
             )
+            
             return response
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -423,15 +431,20 @@ class ServiceListView(APIView):
     
     def get(self, request, *args, **kwargs):
         role_name = request.query_params.get('role')
+        designation = request.query_params.get('designation')
+        # print(role_name,designation)
         
         if role_name:
             try:
-                role = Role.objects.get(role_name=role_name)
-                services = Service.objects.filter(service_roles__role=role)
+                if role_name and designation:
+                    role = Role.objects.filter(Q(role_name=role_name) | Q(role_name=designation))
+                else:
+                    role = Role.objects.get(role_name=role_name)
+                services = Service.objects.filter(service_roles__role__in=role)
             except Role.DoesNotExist:
                 return Response({"error": "Role not found."}, status=404)
         else:
-            services = Service.objects.all()
+            services = Service.objects.filter(display_to_unauth_user=True)
         
         serializer = ServiceSerializer(services, many=True)
         return Response(serializer.data)
@@ -530,7 +543,7 @@ class UserOPDListView(APIView):
 
     def get(self, request, id):
         try:
-            data = OPDFormData.objects.filter(employee__email=id)
+            data = OPDFormData.objects.filter(employee__email=id).order_by('-created_at')
 
             if not data.exists():
                 return Response({"message": "Data not found!"}, status=status.HTTP_404_NOT_FOUND)
@@ -547,7 +560,7 @@ class AdminOPDListView(APIView):
 
     def get(self,request):
         try:
-            data = OPDFormData.objects.all()
+            data = OPDFormData.objects.all().order_by('-created_at')
 
             if not data.exists():
                 return Response({"message": "Data not found!"}, status=status.HTTP_404_NOT_FOUND)
@@ -953,7 +966,7 @@ class TopCircularsView(APIView):
                 ).distinct().order_by('-created_at')[:10]
             else:
                 # For anonymous users, fetch circulars assigned to all roles and are published
-                all_roles_count = Role.objects.count()
+                all_roles_count = len(['Admin','Faculty','Employee','ExEmployee','Student','Alumin'])
                 circulars = Circulars.objects.annotate(
                     role_count=Count('access_to')
                 ).filter(
@@ -1014,7 +1027,8 @@ class AllCircularsView(APIView):
                 ).distinct().order_by('-created_at')[:]
             else:
                 # For anonymous users, fetch circulars assigned to all roles and are published
-                all_roles_count = Role.objects.count()
+                # all_roles_count = Role.objects.count()
+                all_roles_count = len(['Admin','Faculty','Employee','ExEmployee','Student','Alumin'])
                 circulars = Circulars.objects.annotate(
                     role_count=Count('access_to')
                 ).filter(

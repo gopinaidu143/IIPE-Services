@@ -6,17 +6,24 @@ import MemoForm from "./service-content/OfficememoForm";
 import MemoList from "./service-content/OfficememoList";
 import OfficeMemoData from "./service-content/OfficememoData";
 import CircularForm from "./service-content/CircularList";
+import AllCircularView from "./service-content/Allciecularview";
+import AllEventView from "./service-content/Alleventview";
 // import EventForm from "./service-content/temp2";
 // import MemoForm from "./service-content/temp3";
 // import EmailRequisitionForm from "./service-content/temp4";
-import SoftwareRequisitionForm from "./service-content/temp5";
+// import SoftwareRequisitionForm from "./service-content/temp5";
 import CircularData from "./service-content/CircularForm";
 import CircularManagement from "./service-content/CircularData";
 import EventList from "./service-content/EventList";
 import EventForm from "./service-content/EventForm";
 import EventData from "./service-content/EventData";
-// import SoftwareRequisitionForm from "./service-content/softwarereqform";
+import SoftwareRequisitionForm from "./service-content/softwarereqform";
+import AdminSoftwareView from "./service-content/Adminsoftwareview";
 import Emailrequisition from "./service-content/std_email_reqform";
+import AdminEmailView from "./service-content/Adminmailview";
+import LoginRequired from "./service-content/loginrequired";
+import UserOPD from "./service-content/useropd";
+import AdminPage from "./service-content/adminopd";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHome,
@@ -42,6 +49,7 @@ import axios from "axios";
 import logo from "../assets/logo.png";
 import Circular from "./service-content/circular";
 import Event from  "./service-content/EventForm"
+import AllMemos from "./service-content/Allmemoview";
 
 const styles = {
   container: {
@@ -191,7 +199,7 @@ const styles = {
 };
 
 export default function Services() {
-  const { logoutUser, isAuthenticated, user, role } = useContext(AuthContext);
+  const { logoutUser, isAuthenticated, user, role,designation } = useContext(AuthContext);
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -204,8 +212,15 @@ export default function Services() {
 
   const fetchServices = useCallback(async () => {
     setLoading(true);
-    const apiUrl = isAuthenticated ? `/api/services/?role=${role}` : "/api/services/";
-    try {
+    console.log(designation);
+    let apiUrl = "/api/services/";
+
+    if (isAuthenticated) {
+      apiUrl = `/api/services/?role=${role}`;
+      if (role === "Employee" && designation) {
+          apiUrl += `&designation=${designation}`;
+      }
+  }    try {
       const response = await axios.get(apiUrl);
       setServices(
         response.data.map((service) => ({
@@ -240,28 +255,71 @@ export default function Services() {
   }, []);
 
   useEffect(() => {
-    console.log("Current service changed:", currentService);
-    if (currentService === "OPD Form") {
-      setServiceContent(<OPD />);
+    // console.log("Current service changed:", currentService);
+    if (currentService === "OPD Service") {
+      // setServiceContent(<OPD />);
+      
+      if (isAuthenticated) {
+        setServiceContent(<UserOPD />);
+      }
+      else{
+        setServiceContent(<LoginRequired />);
+      }
+
+    }
+    else if(currentService === "OPD Request") {
+      // setServiceContent(<OPD />);
+      
+      if (isAuthenticated) {
+        setServiceContent(<AdminPage />);
+      }
+      else{
+        setServiceContent(<LoginRequired />);
+      }
+
     }
     else if (currentService === "Circulars"){
+      setServiceContent(<AllCircularView />);
+    } 
+    else if (currentService === "Circular/ Notification/ Orders"){
       setServiceContent(<CircularManagement />);
     } 
+
     else if (currentService === "Notifications"){
-      setServiceContent(<CircularForm />);//this is dummy circular
+      setServiceContent(<AllCircularView />);//this is dummy circular
+    } 
+    else if (currentService === "Office Orders"){
+      setServiceContent(<AllCircularView />);//this is dummy circular
     } 
     // else if (currentService === "Notifications") {
     //   setServiceContent(<CircularList onEdit={handleEditCircular} />); // Pass the handler
     // }
     else if (currentService === "Events"){
+        setServiceContent(<AllEventView/>);
+  
+    } 
+    else if (currentService === "Publish Events"){
       setServiceContent(<EventData/>);
     } 
+    
     else if (currentService === "Software Requisition"){
       // setServiceContent(<SoftwareRequisitionForm />);
-      setServiceContent(<SoftwareRequisitionForm />);
+      
+      if (isAuthenticated) {
+        setServiceContent(<SoftwareRequisitionForm />);
+      }
+      else{
+        setServiceContent(<LoginRequired />);
+      }
+    } 
+    else if (currentService === "Software Requisition Request"){
+      setServiceContent(<AdminSoftwareView />);
     } 
     else if (currentService === "Email Requisition"){
       setServiceContent(<Emailrequisition />);
+    } 
+    else if (currentService === "Email Requisition Request"){
+      setServiceContent(<AdminEmailView />);
     } 
     else if (currentService === "Guesthouse Booking"){
       // navigate("/GuestHousebooking");
@@ -270,6 +328,9 @@ export default function Services() {
     else if (currentService === "Office Memorandums"){
       // setServiceContent(<Memorandums />);
       setServiceContent(<OfficeMemoData/>);
+    } 
+    else if (currentService === "Office Memos"){
+      setServiceContent(<AllMemos/>);
     } 
     else if (currentService === "IT Services"){
       setServiceContent(<CircularData/>);   
@@ -284,7 +345,7 @@ export default function Services() {
   };
 
   const handleServiceClick = (slug, serviceName) => {
-    console.log("Service clicked:", slug, serviceName);
+    // console.log("Service clicked:", slug, serviceName);
     setSelectedService(slug);
     setCurrentService(serviceName);
     
@@ -317,13 +378,19 @@ export default function Services() {
 
   const getIconByName = (name) => {
     switch (name) {
-      case "OPD Form":
+      case "OPD Service":
+        return faClipboard;
+      case "OPD Request":
         return faClipboard;
       case "Webmail Password Change":
         return faKey;
       case "Circulars":
         return faFileAlt;
+      case "Circular/ Notification/ Orders":
+        return faFileAlt;
       case "Notifications":
+        return faBell;
+      case "Office Orders":
         return faBell;
       case "IT Services":
         return faLaptop;
@@ -331,13 +398,21 @@ export default function Services() {
         return faBuilding;
       case "Email Requisition":
         return faEnvelope;
+      case "Email Requisition Request":
+        return faEnvelope;
       case "Software Requisition":
+        return faBox;
+      case "Software Requisition Request":
         return faBox;
       case "Academic Services":
         return faGraduationCap;
       case "Office Memorandums":
         return faStickyNote;
+      case "Office Memos":
+        return faStickyNote;
       case "Events":
+        return faCalendarAlt;
+      case "Publish Events":
         return faCalendarAlt;
       default:
         return faQuestionCircle;

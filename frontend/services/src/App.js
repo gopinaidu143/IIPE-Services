@@ -123,16 +123,19 @@ function App() {
               <Route path="/guesthouses/a" element={<GuestHousePage/>}/>
               <Route path="/guesthouses/b" element={<GuestHousePageB/>}/>
               <Route path="/guesthouses/c" element={<GuestHousePageC/>}/>
-              <Route path="/about" element={<AdminEmailView/>}/>
+              {/* <Route path="/about" element={<AdminEmailView/>}/> */}
               <Route path="/GuestHousebooking/about" element={<About/>}/>
               {/* <Route path="/academics" element={<DependentForm/>}/> */}
-              <Route path="/academics" element={<AdminSoftwareView/>}/>
-              <Route path="/placements" element={<AdminPage/>}/>
+              {/* <Route path="/academics" element={<AdminSoftwareView/>}/> */}
+              {/* <Route path="/placements" element={<AdminPage/>}/> */}
               {/* <Route path="/people" element={<People/>}/> */}
               {/* <Route path="/OPD" element={<OPD/>}/> */}
               <Route path="/register" element={<RegistrationForm/>}/> 
               <Route path="/dining-menu" element={<Dining/>}/>
               <Route path='/reset-password' element={<ForgotPassword/>}/>
+              <Route path='/adminlogin' element={<AdmLogin1/>}/>
+
+
             </Routes>
           </AuthProvider>
         </div>

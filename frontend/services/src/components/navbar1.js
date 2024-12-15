@@ -165,6 +165,7 @@ const Navbar1 = () => {
             { name: "Faculty", path: "/login?role=Faculty" },
             { name: "ExEmployee", path: "/login?role=ExEmployee" },
             { name: "Alumni", path: "/login?role=Alumni" },
+            { name: "Admin", path: "/adminlogin"},
             { name: "Reset Password", path: "/reset-password" },
           ],
     },

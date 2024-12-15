@@ -280,11 +280,19 @@ const ServiceCard = ({ name, description }) => (
 const ServicesPage = () => {
   const [filteredServices, setFilteredServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { role, isAuthenticated } = useContext(AuthContext);
+  const { role, isAuthenticated,designation } = useContext(AuthContext);
+  
 
   const fetchServices = useCallback(async () => {
     setLoading(true);
-    const apiUrl = isAuthenticated ? `/api/services/?role=${role}` : "/api/services/";
+    console.log(designation);
+    let apiUrl = "/api/services/";
+    if (isAuthenticated) {
+        apiUrl = `/api/services/?role=${role}`;
+        if (role === "Employee" && designation) {
+            apiUrl += `&designation=${designation}`;
+        }
+    }
     try {
       const response = await axios.get(apiUrl);
       setFilteredServices(response.data);

@@ -20,6 +20,7 @@ class Role(models.Model):
 class Service(models.Model):
     service_name = models.CharField(max_length=50, unique=True)
     description = models.TextField(null=True, blank=True)
+    display_to_unauth_user = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
