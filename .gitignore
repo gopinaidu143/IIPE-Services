@@ -3,6 +3,7 @@
 # dependencies
 /backend/core/api/migrations/
 /frontend/services/node_modules/
+/yoga_backend/
 /venv
 /.pnp
 .pnp.js

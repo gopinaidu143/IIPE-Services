@@ -2,18 +2,39 @@ from django.core.management.base import BaseCommand
 from  api.models import Service
 
 # Sample data for bulk insertion
+# services = [
+#     {"service_name":"Email Requisition"},
+#     {"service_name":"Software Requisition"},
+#     {"service_name":"Webmail Password Change"},
+#     {"service_name":"Circulars"},
+#     {"service_name":"Academic Services"},
+#     {"service_name":"IT Services"},
+#     {"service_name":"Notifications"},
+#     {"service_name":"OPD Form"},
+#     {"service_name":"Guesthouse Booking"},
+#     {"service_name":"Office Memorandums"},
+#     {"service_name":"Events"}    
+# ]
+
 services = [
     {"service_name":"Email Requisition"},
+    {"service_name":"Email Requisition Request"},
     {"service_name":"Software Requisition"},
+    {"service_name":"Software Requisition Request"},
     {"service_name":"Webmail Password Change"},
     {"service_name":"Circulars"},
+    {"service_name":"Circular/ Notification/ Orders"},
     {"service_name":"Academic Services"},
     {"service_name":"IT Services"},
     {"service_name":"Notifications"},
-    {"service_name":"OPD Form"},
+    {"service_name":"OPD Service"},
+    {"service_name":"OPD Request"},
     {"service_name":"Guesthouse Booking"},
     {"service_name":"Office Memorandums"},
-    {"service_name":"Events"}    
+    {"service_name":"Office Memos"},
+    {"service_name":"Office Orders"},
+    {"service_name":"Publish Events"},
+    {"service_name":"Events"}  
 ]
 
 

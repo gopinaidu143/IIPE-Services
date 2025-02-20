@@ -2,13 +2,27 @@ from django.core.management.base import BaseCommand
 from  api.models import Role
 
 # Sample data for bulk insertion
+# roles = [
+#     {"role_name":"Admin"},
+#     {"role_name":"Student"},
+#     {"role_name":"Faculty"},
+#     {"role_name":"Employee"},
+#     {"role_name":"Alumni"},
+#     {"role_name":"ExEmployee"}
+# ]
+
 roles = [
     {"role_name":"Admin"},
     {"role_name":"Student"},
     {"role_name":"Faculty"},
     {"role_name":"Employee"},
     {"role_name":"Alumni"},
-    {"role_name":"ExEmployee"}
+    {"role_name":"ExEmployee"},
+    {"role_name":"DEPUTY REGISTRAR"},
+    {"role_name":"ASSTT. REGISTRAR"},
+    {"role_name":"REGISTRAR"},
+    {"role_name":"Lab Assistant (CSE)"},
+    {"role_name":"DIRECTOR"}
 ]
 
 
